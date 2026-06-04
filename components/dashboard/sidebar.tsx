@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import {
   LayoutDashboard,
   Facebook,
-  Chrome,
+  Target,
   Music2,
   Link2,
   Puzzle,
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 const navItems = [
   { icon: LayoutDashboard, label: "Resumo", active: true },
   { icon: Facebook, label: "Meta Ads" },
-  { icon: Chrome, label: "Google Ads" },
+  { icon: Target, label: "Google Ads" },
   { icon: Music2, label: "TikTok Ads" },
   { icon: Link2, label: "UTMs" },
   { icon: Puzzle, label: "Integrações" },
