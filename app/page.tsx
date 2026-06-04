@@ -1,16 +1,26 @@
-export default function Home() {
+import { AnimatedBackground } from "@/components/login/animated-background"
+import { LoginCard } from "@/components/login/login-card"
+
+export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center font-sans">
-      <main className="flex w-full max-w-3xl flex-col items-center gap-8 px-6 py-16 text-center sm:items-start sm:text-left">
-        <div className="flex flex-col gap-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            META X
-          </h1>
-          <p className="max-w-md text-lg text-muted-foreground">
-            To get started, send a prompt or modify this page directly.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
+    <main className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background */}
+      <AnimatedBackground />
+
+      {/* Version tag */}
+      <div className="absolute top-4 right-4 text-xs text-muted-foreground/50 font-mono">
+        MetaX v2.1
+      </div>
+
+      {/* Login card */}
+      <LoginCard />
+
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-xs text-muted-foreground/40">
+          © 2025 MetaX. Todos os direitos reservados.
+        </p>
+      </div>
+    </main>
+  )
 }
