@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MetaAdsSidebar } from "@/components/meta-ads/sidebar"
+import { Sidebar } from "@/components/shared/sidebar"
 import { MetaAdsHeader } from "@/components/meta-ads/header"
 import { MetaAdsSummaryCards } from "@/components/meta-ads/summary-cards"
 import { TabNavigation } from "@/components/meta-ads/tab-navigation"
@@ -21,7 +21,7 @@ export default function MetaAdsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
-      <MetaAdsSidebar activePage="meta-ads" />
+      <Sidebar activePage="meta-ads" />
       <MetaAdsHeader />
       
       {/* Main content */}

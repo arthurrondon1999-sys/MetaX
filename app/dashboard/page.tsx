@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/dashboard/sidebar"
+import { Sidebar } from "@/components/shared/sidebar"
 import { Header } from "@/components/dashboard/header"
 import { MetricsGrid } from "@/components/dashboard/metric-cards"
 import { RevenueChart, SalesByHourChart } from "@/components/dashboard/charts"
@@ -9,7 +9,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardBackground />
-      <Sidebar />
+      <Sidebar activePage="dashboard" />
       <Header />
 
       {/* Main Content */}
