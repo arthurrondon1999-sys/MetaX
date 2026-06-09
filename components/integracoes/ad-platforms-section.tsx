@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { Megaphone } from "lucide-react"
 import { MetaLogo } from "./platform-logos"
 
-export function AdPlatformsSection() {
+export function AdPlatformsSection({ onManage }: { onManage?: () => void }) {
   return (
     <section>
       <SectionTitle icon={<Megaphone className="w-5 h-5 text-cyan" />} title="Plataforma de Anúncios" />
@@ -52,7 +52,10 @@ export function AdPlatformsSection() {
           Última sincronização: <span className="text-cyan">há 2 minutos</span>
         </p>
 
-        <button className="mt-5 w-full py-2.5 rounded-lg border border-cyan/40 text-cyan text-sm font-medium hover:bg-cyan/10 transition-colors">
+        <button
+          onClick={onManage}
+          className="mt-5 w-full py-2.5 rounded-lg border border-cyan/40 text-cyan text-sm font-medium hover:bg-cyan/10 transition-colors"
+        >
           Gerenciar Conexão
         </button>
       </motion.div>

@@ -37,8 +37,8 @@ export function TikTokLogo({ className = "w-7 h-7" }: { className?: string }) {
 function PlatformBadge({ letter, bg }: { letter: string; bg: string }) {
   return (
     <div
-      className={`w-7 h-7 rounded-md flex items-center justify-center text-white font-bold ${
-        letter.length > 1 ? "text-[11px]" : "text-sm"
+      className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold ${
+        letter.length > 1 ? "text-xs" : "text-base"
       }`}
       style={{ background: bg }}
     >
@@ -48,17 +48,17 @@ function PlatformBadge({ letter, bg }: { letter: string; bg: string }) {
 }
 
 export function HotmartLogo() {
-  return <PlatformBadge letter="H" bg="linear-gradient(135deg,#FF4F00,#F5004F)" />
+  return <PlatformBadge letter="H" bg="#F04E23" />
 }
 export function KiwifyLogo() {
-  return <PlatformBadge letter="K" bg="linear-gradient(135deg,#00C455,#009E44)" />
+  return <PlatformBadge letter="K" bg="#00C853" />
 }
 export function PerfectPayLogo() {
-  return <PlatformBadge letter="PP" bg="linear-gradient(135deg,#1E5BFF,#0033B3)" />
+  return <PlatformBadge letter="PP" bg="#1E40AF" />
 }
 export function DigistoreLogo() {
-  return <PlatformBadge letter="D" bg="linear-gradient(135deg,#FF6A00,#E5102E)" />
+  return <PlatformBadge letter="D" bg="#E53E3E" />
 }
 export function CaktoLogo() {
-  return <PlatformBadge letter="C" bg="linear-gradient(135deg,#8B00FF,#5B00B3)" />
+  return <PlatformBadge letter="C" bg="#7C3AED" />
 }

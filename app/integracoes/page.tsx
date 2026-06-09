@@ -11,8 +11,9 @@ import { HowItWorksSection } from "@/components/integracoes/how-it-works-section
 import { ConnectModal } from "@/components/integracoes/connect-modal"
 
 export default function IntegracoesPage() {
-  // Modal opens with "Kiwify" by default to showcase it
-  const [connectingPlatform, setConnectingPlatform] = useState<string | null>("Kiwify")
+  // null = closed. No modal opens on page load.
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
+  const [manageOpen, setManageOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -33,13 +34,21 @@ export default function IntegracoesPage() {
             lugar.
           </motion.p>
 
-          <AdPlatformsSection />
+          <AdPlatformsSection onManage={() => setManageOpen(true)} />
           <SalesPlatformsSection onConnect={setConnectingPlatform} />
           <HowItWorksSection />
         </div>
       </main>
 
+      {/* Connect (em breve) modal */}
       <ConnectModal platform={connectingPlatform} onClose={() => setConnectingPlatform(null)} />
+
+      {/* Gerenciar conexão modal */}
+      <ConnectModal
+        platform={manageOpen ? "Meta Ads" : null}
+        manage
+        onClose={() => setManageOpen(false)}
+      />
     </div>
   )
 }

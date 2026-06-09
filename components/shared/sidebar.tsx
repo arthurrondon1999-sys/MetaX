@@ -6,6 +6,7 @@ import {
   Megaphone,
   Puzzle,
   FileBarChart,
+  Receipt,
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,7 @@ const navItems = [
   { icon: Megaphone, label: "Meta Ads", href: "/meta-ads" },
   { icon: Puzzle, label: "Integrações", href: "/integracoes" },
   { icon: FileBarChart, label: "Relatórios", href: "/relatorios" },
+  { icon: Receipt, label: "Despesas", href: "/despesas" },
 ]
 
 export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
