@@ -1,8 +1,26 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 import { InfoIcon } from "@/components/shared/info-icon"
 import { cn } from "@/lib/utils"
+import { formatCurrency, formatDecimal } from "@/lib/meta/metrics"
+
+export interface MetaSummary {
+  spend: number
+  impressions: number
+  clicks: number
+  reach: number
+  cpc: number
+  cpm: number
+  ctr: number
+  frequency: number
+  purchases: number
+  revenue: number
+  leads: number
+  roas: number
+  cpa: number
+}
 
 interface MetricCardProps {
   label: string
@@ -11,9 +29,10 @@ interface MetricCardProps {
   className?: string
   delay?: number
   accent?: string
+  loading?: boolean
 }
 
-function MetricCard({ label, value, tip, className, delay = 0, accent }: MetricCardProps) {
+function MetricCard({ label, value, tip, className, delay = 0, accent, loading }: MetricCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -21,46 +40,72 @@ function MetricCard({ label, value, tip, className, delay = 0, accent }: MetricC
       transition={{ duration: 0.4, delay }}
       className={cn(
         "group relative rounded-xl bg-white/[0.03] border border-white/10 p-5 overflow-hidden hover:border-electric-blue/30 transition-all duration-300",
-        className
+        className,
       )}
     >
       {/* hover glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{ background: "radial-gradient(circle at 50% 0%, rgba(0,102,255,0.08), transparent 70%)" }}
       />
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <InfoIcon tip={tip} />
       </div>
-      <p className={cn("mt-3 text-2xl font-bold tracking-tight", accent ?? "text-white")}>{value}</p>
+      {loading ? (
+        <Loader2 className="mt-3 w-5 h-5 text-muted-foreground animate-spin" />
+      ) : (
+        <p className={cn("mt-3 text-2xl font-bold tracking-tight", accent ?? "text-white")}>{value}</p>
+      )}
     </motion.div>
   )
 }
 
-export function MetricsGrid() {
+interface MetricsGridProps {
+  summary?: MetaSummary | null
+  loading?: boolean
+}
+
+export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
+  // Receita/vendas vêm das ações de compra rastreadas pelo Meta.
+  const revenue = summary?.revenue ?? 0
+  const spend = summary?.spend ?? 0
+  const profit = revenue - spend
+  const roas = summary?.roas ?? 0
+  const cpa = summary?.cpa ?? 0
+  const purchases = summary?.purchases ?? 0
+  const arpu = purchases > 0 ? revenue / purchases : 0
+  const roi = spend > 0 ? ((revenue - spend) / spend) * 100 : 0
+  const margin = revenue > 0 ? (profit / revenue) * 100 : 0
+
+  const has = Boolean(summary)
+  const money = (v: number) => (has ? formatCurrency(v) : "R$ 0,00")
+  const naDecimal = (v: number, suffix = "") => (has && v ? `${formatDecimal(v)}${suffix}` : "N/A")
+  const naPercent = (v: number) => (has && v ? `${formatDecimal(v)}%` : "N/A")
+
   return (
     <div className="space-y-4">
       {/* Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Faturamento Líquido" value="R$ 0,00" tip="Faturamento líquido no período" delay={0} />
-        <MetricCard label="Gastos com Anúncios" value="R$ 0,00" tip="Total gasto em anúncios" delay={0.05} />
-        <MetricCard label="Lucro" value="R$ 0,00" tip="Lucro no período" delay={0.1} accent="text-emerald-400" />
-        <MetricCard label="ROAS" value="N/A" tip="Return on Ad Spend" delay={0.15} accent="text-cyan" />
+        <MetricCard label="Faturamento Líquido" value={money(revenue)} tip="Receita de compras rastreadas pelo Meta" delay={0} loading={loading} />
+        <MetricCard label="Gastos com Anúncios" value={money(spend)} tip="Total gasto em anúncios no Meta" delay={0.05} loading={loading} />
+        <MetricCard label="Lucro" value={money(profit)} tip="Receita menos gastos com anúncios" delay={0.1} accent={profit >= 0 ? "text-emerald-400" : "text-red-400"} loading={loading} />
+        <MetricCard label="ROAS" value={naDecimal(roas, "x")} tip="Return on Ad Spend" delay={0.15} accent="text-cyan" loading={loading} />
       </div>
 
       {/* Row 2 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Faturamento Bruto" value="R$ 0,00" tip="Faturamento bruto no período" delay={0.2} />
-        <MetricCard label="ARPU" value="R$ 0,00" tip="Receita média por usuário" delay={0.25} />
-        <MetricCard label="Vendas Pendentes" value="R$ 0,00" tip="Vendas aguardando aprovação" delay={0.3} />
-        <MetricCard label="ROI" value="N/A" tip="Return on Investment" delay={0.35} accent="text-cyan" />
+        <MetricCard label="Faturamento Bruto" value={money(revenue)} tip="Receita bruta de compras rastreadas" delay={0.2} loading={loading} />
+        <MetricCard label="ARPU" value={money(arpu)} tip="Receita média por venda" delay={0.25} loading={loading} />
+        <MetricCard label="Vendas" value={has ? String(purchases) : "0"} tip="Total de compras rastreadas" delay={0.3} loading={loading} />
+        <MetricCard label="ROI" value={naPercent(roi)} tip="Return on Investment" delay={0.35} accent="text-cyan" loading={loading} />
       </div>
 
       {/* Row 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <MetricCard label="CPA" value="R$ 0,00" tip="Custo por aquisição" delay={0.4} className="lg:col-span-1" />
+        <MetricCard label="CPA" value={has && cpa ? money(cpa) : "R$ 0,00"} tip="Custo por aquisição" delay={0.4} className="lg:col-span-1" loading={loading} />
 
-        {/* Taxa de Aprovação (large) */}
+        {/* Taxa de Aprovação (large) — depende de plataforma de vendas, não integrada */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -69,7 +114,7 @@ export function MetricsGrid() {
         >
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">Taxa de Aprovação</span>
-            <InfoIcon tip="Taxa de aprovação por método de pagamento" />
+            <InfoIcon tip="Taxa de aprovação por método de pagamento (requer plataforma de vendas)" />
           </div>
           <div className="mt-4 space-y-2.5">
             {[
@@ -90,7 +135,7 @@ export function MetricsGrid() {
           </div>
         </motion.div>
 
-        <MetricCard label="Margem" value="N/A" tip="Margem de lucro" delay={0.5} className="lg:col-span-1" accent="text-cyan" />
+        <MetricCard label="Margem" value={naPercent(margin)} tip="Margem de lucro" delay={0.5} className="lg:col-span-1" accent="text-cyan" loading={loading} />
       </div>
     </div>
   )

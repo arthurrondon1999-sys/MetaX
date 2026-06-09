@@ -3,8 +3,23 @@
 import { motion } from "framer-motion"
 import { Megaphone } from "lucide-react"
 import { MetaLogo } from "./platform-logos"
+import type { MetaStatus } from "@/hooks/use-meta"
 
-export function AdPlatformsSection({ onManage }: { onManage?: () => void }) {
+interface AdPlatformsSectionProps {
+  onManage?: () => void
+  status?: MetaStatus
+  loading?: boolean
+}
+
+export function AdPlatformsSection({ onManage, status, loading }: AdPlatformsSectionProps) {
+  const connected = Boolean(status?.connected)
+  const tokenValid = Boolean(status?.tokenValid)
+  const activeAccount = status?.accounts?.find((a) => a.account_id === status?.accountId) || status?.accounts?.[0]
+  const accountName = activeAccount?.name
+
+  const borderColor = tokenValid ? "rgba(0,255,100,0.2)" : connected ? "rgba(255,180,0,0.25)" : "rgba(255,255,255,0.1)"
+  const glow = tokenValid ? "rgba(0,255,100,0.08)" : connected ? "rgba(255,180,0,0.08)" : "transparent"
+
   return (
     <section>
       <SectionTitle icon={<Megaphone className="w-5 h-5 text-cyan" />} title="Plataforma de Anúncios" />
@@ -16,15 +31,10 @@ export function AdPlatformsSection({ onManage }: { onManage?: () => void }) {
         whileHover={{ y: -4 }}
         className="relative w-full max-w-[480px] p-6 rounded-xl bg-card/40 backdrop-blur-xl border transition-all duration-300 group"
         style={{
-          borderColor: "rgba(0,255,100,0.2)",
-          boxShadow: "0 0 24px rgba(0,255,100,0.08)",
+          borderColor,
+          boxShadow: `0 0 24px ${glow}`,
         }}
       >
-        <div
-          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
-          style={{ boxShadow: "0 0 40px rgba(0,255,100,0.15)" }}
-        />
-
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/5 flex items-center justify-center shrink-0">
@@ -35,28 +45,41 @@ export function AdPlatformsSection({ onManage }: { onManage?: () => void }) {
               <p className="text-xs text-muted-foreground">Facebook &amp; Instagram Ads</p>
             </div>
           </div>
-          <StatusBadge connected />
+          <StatusBadge connected={tokenValid} pending={connected && !tokenValid} />
         </div>
 
         {/* Connected account */}
-        <div className="flex items-center gap-2 mt-5 p-3 rounded-lg bg-white/[0.03] border border-white/5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric-blue to-neon-purple flex items-center justify-center text-white text-[11px] font-semibold">
-            AR
+        {connected && (
+          <div className="flex items-center gap-2 mt-5 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric-blue to-neon-purple flex items-center justify-center text-white text-[11px] font-semibold">
+              {accountName ? accountName.slice(0, 2).toUpperCase() : "MA"}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Conta:{" "}
+              <span className="text-white font-medium">
+                {accountName || (tokenValid ? "Conta padrão" : "Indisponível")}
+              </span>
+            </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            Conta: <span className="text-white font-medium">Arthur Rondon</span>
-          </span>
-        </div>
+        )}
 
-        <p className="text-[11px] text-muted-foreground mt-3">
-          Última sincronização: <span className="text-cyan">há 2 minutos</span>
-        </p>
+        {connected && !tokenValid && status?.error && (
+          <p className="text-[11px] text-amber-400 mt-3">{status.error}</p>
+        )}
+
+        {connected && status?.updatedAt && (
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Última atualização:{" "}
+            <span className="text-cyan">{new Date(status.updatedAt).toLocaleString("pt-BR")}</span>
+          </p>
+        )}
 
         <button
           onClick={onManage}
-          className="mt-5 w-full py-2.5 rounded-lg border border-cyan/40 text-cyan text-sm font-medium hover:bg-cyan/10 transition-colors"
+          disabled={loading}
+          className="mt-5 w-full py-2.5 rounded-lg border border-cyan/40 text-cyan text-sm font-medium hover:bg-cyan/10 transition-colors disabled:opacity-50"
         >
-          Gerenciar Conexão
+          {connected ? "Gerenciar Conexão" : "Conectar Meta Ads"}
         </button>
       </motion.div>
     </section>
@@ -75,12 +98,20 @@ export function SectionTitle({ icon, title }: { icon: React.ReactNode; title: st
   )
 }
 
-export function StatusBadge({ connected = false }: { connected?: boolean }) {
+export function StatusBadge({ connected = false, pending = false }: { connected?: boolean; pending?: boolean }) {
   if (connected) {
     return (
       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20">
         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
         <span className="text-xs font-medium text-green-500">Conectado</span>
+      </div>
+    )
+  }
+  if (pending) {
+    return (
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        <span className="text-xs font-medium text-amber-500">Atenção</span>
       </div>
     )
   }

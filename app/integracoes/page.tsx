@@ -9,11 +9,15 @@ import { AdPlatformsSection } from "@/components/integracoes/ad-platforms-sectio
 import { SalesPlatformsSection } from "@/components/integracoes/sales-platforms-section"
 import { HowItWorksSection } from "@/components/integracoes/how-it-works-section"
 import { ConnectModal } from "@/components/integracoes/connect-modal"
+import { MetaConnectionModal } from "@/components/integracoes/meta-connection-modal"
+import { useMetaStatus } from "@/hooks/use-meta"
 
 export default function IntegracoesPage() {
   // null = closed. No modal opens on page load.
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
   const [manageOpen, setManageOpen] = useState(false)
+
+  const { status, isLoading, mutate } = useMetaStatus()
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -30,24 +34,24 @@ export default function IntegracoesPage() {
             transition={{ duration: 0.4 }}
             className="text-sm text-muted-foreground max-w-2xl leading-relaxed"
           >
-            Conecte sua conta de anúncios e plataformas de vendas para visualizar todos os dados em um só
-            lugar.
+            Conecte sua conta de anúncios e plataformas de vendas para visualizar todos os dados em um só lugar.
           </motion.p>
 
-          <AdPlatformsSection onManage={() => setManageOpen(true)} />
+          <AdPlatformsSection status={status} loading={isLoading} onManage={() => setManageOpen(true)} />
           <SalesPlatformsSection onConnect={setConnectingPlatform} />
           <HowItWorksSection />
         </div>
       </main>
 
-      {/* Connect (em breve) modal */}
+      {/* Connect (em breve) modal — plataformas de venda */}
       <ConnectModal platform={connectingPlatform} onClose={() => setConnectingPlatform(null)} />
 
-      {/* Gerenciar conexão modal */}
-      <ConnectModal
-        platform={manageOpen ? "Meta Ads" : null}
-        manage
+      {/* Gerenciar conexão Meta (real) */}
+      <MetaConnectionModal
+        open={manageOpen}
         onClose={() => setManageOpen(false)}
+        status={status}
+        onChanged={() => mutate()}
       />
     </div>
   )
