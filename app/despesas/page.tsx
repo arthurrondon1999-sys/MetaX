@@ -94,7 +94,10 @@ export default function DespesasPage() {
         updatedLabel=""
         actions={
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              console.log("[v0] Clique em Adicionar gasto, abrindo modal")
+              setModalOpen(true)
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #0066FF, #8B00FF)" }}
           >
