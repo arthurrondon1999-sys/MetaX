@@ -10,6 +10,9 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/components/auth/auth-provider"
 
 interface SidebarProps {
   activePage?: string
@@ -23,6 +26,19 @@ const navItems = [
 ]
 
 export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
+  const router = useRouter()
+  const { user } = useAuth()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+    router.refresh()
+  }
+
+  const email = user?.email ?? ""
+  const initials = email ? email.slice(0, 2).toUpperCase() : "MX"
+
   return (
     <motion.aside
       initial={{ x: -240, opacity: 0 }}
@@ -157,24 +173,24 @@ export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
       {/* User section */}
       <div className="p-4 border-t border-sidebar-border/10">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-electric-blue to-neon-purple flex items-center justify-center text-white font-semibold text-sm">
-            AR
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-electric-blue to-neon-purple flex items-center justify-center text-white font-semibold text-sm shrink-0">
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
-              André Reis
+              {email || "Carregando..."}
             </p>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
               Plano Pro
             </span>
           </div>
-          <Link
-            href="/login"
-            className="p-2 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors shrink-0"
             title="Sair"
           >
             <LogOut className="w-4 h-4" />
-          </Link>
+          </button>
         </div>
       </div>
     </motion.aside>

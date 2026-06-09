@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Mail, Lock, Eye, EyeOff, Check } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { MetaXLogo } from "./metax-logo"
 
 export function LoginCard() {
@@ -14,13 +15,54 @@ export function LoginCard() {
   const [password, setPassword] = useState("")
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setError(null)
+    setSuccessMessage(null)
+
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (signInError) {
+      setError("Email ou senha incorretos")
+      setIsLoading(false)
+      return
+    }
+
     router.push("/dashboard")
+    router.refresh()
+  }
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccessMessage(null)
+
+    if (!email) {
+      setError("Digite seu email para recuperar a senha")
+      return
+    }
+
+    const supabase = createClient()
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo:
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+        `${window.location.origin}/auth/callback`,
+    })
+
+    if (resetError) {
+      setError("Não foi possível enviar o email de recuperação")
+      return
+    }
+
+    setSuccessMessage("Email de recuperação enviado!")
   }
 
   return (
@@ -155,12 +197,13 @@ export function LoginCard() {
                   Lembrar-me
                 </span>
               </label>
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={handleForgotPassword}
                 className="text-electric-blue hover:text-cyan transition-colors"
               >
                 Esqueceu a senha?
-              </a>
+              </button>
             </div>
 
             {/* Sign In Button */}
@@ -198,43 +241,14 @@ export function LoginCard() {
               </span>
             </motion.button>
 
-            {/* Divider */}
-            <div className="relative flex items-center gap-4 py-2">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              <span className="text-xs text-muted-foreground">
-                ou continue com
-              </span>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-            </div>
-
-            {/* Facebook Button */}
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3.5 rounded-lg font-medium text-white bg-secondary border border-[#1877F2]/30 hover:border-[#1877F2]/60 hover:bg-[#1877F2]/10 transition-all duration-300 flex items-center justify-center gap-3"
-            >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="#1877F2"
-              >
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              Continuar com Facebook
-            </motion.button>
+            {/* Error / Success messages */}
+            {error && (
+              <p className="text-center text-sm text-red-400">{error}</p>
+            )}
+            {successMessage && (
+              <p className="text-center text-sm text-green-400">{successMessage}</p>
+            )}
           </form>
-
-          {/* Sign up link */}
-          <p className="text-center text-sm text-muted-foreground">
-            Não tem uma conta?{" "}
-            <a
-              href="#"
-              className="text-neon-purple hover:text-cyan transition-colors font-medium"
-            >
-              Solicitar Acesso
-            </a>
-          </p>
         </div>
       </motion.div>
     </motion.div>
