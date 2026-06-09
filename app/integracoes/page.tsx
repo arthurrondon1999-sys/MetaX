@@ -11,8 +11,8 @@ import { HowItWorksSection } from "@/components/integracoes/how-it-works-section
 import { ConnectModal } from "@/components/integracoes/connect-modal"
 
 export default function IntegracoesPage() {
-  // Modal opens with "Google Ads" by default to showcase it
-  const [connectingPlatform, setConnectingPlatform] = useState<string | null>("Google Ads")
+  // Modal opens with "Kiwify" by default to showcase it
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>("Kiwify")
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -29,11 +29,11 @@ export default function IntegracoesPage() {
             transition={{ duration: 0.4 }}
             className="text-sm text-muted-foreground max-w-2xl leading-relaxed"
           >
-            Conecte suas contas de anúncios e plataformas de vendas para visualizar todos os dados em um só
+            Conecte sua conta de anúncios e plataformas de vendas para visualizar todos os dados em um só
             lugar.
           </motion.p>
 
-          <AdPlatformsSection onConnect={setConnectingPlatform} />
+          <AdPlatformsSection />
           <SalesPlatformsSection onConnect={setConnectingPlatform} />
           <HowItWorksSection />
         </div>

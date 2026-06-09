@@ -9,19 +9,19 @@ const steps = [
     number: 1,
     icon: Plug,
     title: "Conecte sua conta",
-    description: "Autorize o MetaX a acessar seus dados com segurança via OAuth",
+    description: "Autorize o MetaX via OAuth com segurança total",
   },
   {
     number: 2,
     icon: RefreshCw,
-    title: "Sincronizamos os dados",
-    description: "Importamos automaticamente campanhas, vendas e métricas em tempo real",
+    title: "Dados sincronizados",
+    description: "Campanhas, vendas e métricas importadas em tempo real",
   },
   {
     number: 3,
     icon: BarChart3,
     title: "Visualize tudo",
-    description: "Acesse todos os dados unificados no seu dashboard",
+    description: "Todos os dados unificados no seu dashboard",
   },
 ]
 

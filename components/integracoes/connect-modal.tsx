@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Check } from "lucide-react"
-import { GoogleAdsLogo } from "./platform-logos"
+import { KiwifyLogo } from "./platform-logos"
 
 interface ConnectModalProps {
   platform: string | null
@@ -10,9 +10,9 @@ interface ConnectModalProps {
 }
 
 const allowedPermissions = [
-  "Visualizar campanhas e anúncios",
-  "Acessar métricas de performance",
-  "Ler dados de conversão",
+  "Visualizar produtos e vendas",
+  "Acessar métricas de conversão",
+  "Ler dados de clientes (somente leitura)",
 ]
 
 export function ConnectModal({ platform, onClose }: ConnectModalProps) {
@@ -49,12 +49,12 @@ export function ConnectModal({ platform, onClose }: ConnectModalProps) {
 
             {/* Logo + title */}
             <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center mb-3">
-                <GoogleAdsLogo className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center mb-3 [&>div]:w-11 [&>div]:h-11 [&>div]:rounded-xl [&>div]:text-2xl">
+                <KiwifyLogo />
               </div>
               <h2 className="text-lg font-semibold text-white">Conectar {platform}</h2>
               <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-xs">
-                Você será redirecionado para o Google para autorizar o acesso ao MetaX.
+                Você será redirecionado para a {platform} para autorizar o acesso ao MetaX.
               </p>
             </div>
 
@@ -73,7 +73,7 @@ export function ConnectModal({ platform, onClose }: ConnectModalProps) {
                   <X className="w-3 h-3 text-red-500" />
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  O MetaX nunca poderá: criar, editar ou excluir campanhas
+                  O MetaX nunca poderá: processar pagamentos ou alterar produtos
                 </span>
               </div>
             </div>
@@ -87,10 +87,10 @@ export function ConnectModal({ platform, onClose }: ConnectModalProps) {
                 Cancelar
               </button>
               <button
-                className="flex-1 py-2.5 rounded-lg text-white text-sm font-medium transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,102,255,0.4)]"
-                style={{ background: "linear-gradient(135deg,#0066FF,#8B00FF)" }}
+                className="flex-1 py-2.5 rounded-lg text-white text-sm font-medium transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,196,85,0.4)]"
+                style={{ background: "linear-gradient(135deg,#00C455,#009E44)" }}
               >
-                Autorizar com Google
+                Autorizar com {platform}
               </button>
             </div>
           </motion.div>

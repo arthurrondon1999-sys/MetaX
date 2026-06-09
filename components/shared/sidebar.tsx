@@ -4,15 +4,8 @@ import { motion } from "framer-motion"
 import {
   LayoutDashboard,
   Megaphone,
-  Target,
-  Music2,
-  Link2,
   Puzzle,
   FileBarChart,
-  Wallet,
-  Receipt,
-  Settings,
-  HelpCircle,
   LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -25,15 +18,8 @@ interface SidebarProps {
 const navItems = [
   { icon: LayoutDashboard, label: "Resumo", href: "/dashboard" },
   { icon: Megaphone, label: "Meta Ads", href: "/meta-ads" },
-  { icon: Target, label: "Google Ads", href: "/google-ads" },
-  { icon: Music2, label: "TikTok Ads", href: "/tiktok-ads" },
-  { icon: Link2, label: "UTMs", href: "/utms" },
   { icon: Puzzle, label: "Integrações", href: "/integracoes" },
   { icon: FileBarChart, label: "Relatórios", href: "/relatorios" },
-  { icon: Wallet, label: "Despesas", href: "/despesas" },
-  { icon: Receipt, label: "Impostos", href: "/impostos" },
-  { icon: Settings, label: "Configurações", href: "/configuracoes" },
-  { icon: HelpCircle, label: "Suporte", href: "/suporte" },
 ]
 
 export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
