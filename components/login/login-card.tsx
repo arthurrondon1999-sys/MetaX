@@ -24,36 +24,18 @@ export function LoginCard() {
     setError(null)
     setSuccessMessage(null)
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    console.log("[v0] Supabase URL em uso:", supabaseUrl)
-    console.log("[v0] Anon key prefix:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 12))
-    console.log("[v0] Tentando login com email:", email)
-
     const supabase = createClient()
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    console.log("[v0] Resposta do signInWithPassword - data:", data)
-
     if (signInError) {
-      console.log("[v0] Erro completo:", signInError)
-      console.log("[v0] error.message:", signInError.message)
-      console.log("[v0] error.status:", signInError.status)
-      console.log("[v0] error.name:", signInError.name)
-      console.log("[v0] error.code:", (signInError as { code?: string }).code)
-
-      // Mostra o erro real do Supabase na UI para diagnóstico
-      setError(
-        `[${signInError.status ?? "?"}] ${signInError.message}` +
-          (supabaseUrl ? ` — projeto: ${supabaseUrl.replace("https://", "").split(".")[0]}` : ""),
-      )
+      setError("Email ou senha incorretos")
       setIsLoading(false)
       return
     }
 
-    console.log("[v0] Login bem-sucedido, redirecionando...")
     router.push("/dashboard")
     router.refresh()
   }
