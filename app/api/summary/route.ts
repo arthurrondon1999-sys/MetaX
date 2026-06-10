@@ -33,7 +33,11 @@ export async function GET(request: Request) {
         accountId = accounts[0]?.account_id ?? null
       }
       if (accountId) {
-        const insights = await getAccountInsights(accountId, metaIntegration.token, presetToMetaDateSpec(datePreset))
+        const metaSpec = presetToMetaDateSpec(datePreset)
+        if (typeof metaSpec === "object") {
+          console.log(`[v0] Meta custom range: since=${metaSpec.since} until=${metaSpec.until}`)
+        }
+        const insights = await getAccountInsights(accountId, metaIntegration.token, metaSpec)
         if (insights) {
           spend = Number.parseFloat(insights.spend || "0")
           metaPurchases = findActionValue(insights.actions, "purchase")
@@ -62,6 +66,13 @@ export async function GET(request: Request) {
       hotmartConnected = true
       try {
         const { start, end } = presetToRange(datePreset)
+        if (datePreset.startsWith("custom:")) {
+          const fmt = (ms: number) =>
+            new Date(ms).toLocaleString("en-CA", { timeZone: "America/Sao_Paulo" })
+          console.log(
+            `[v0] Hotmart custom range: start=${start} (${fmt(start)} BRT) end=${end} (${fmt(end)} BRT)`,
+          )
+        }
         const sales = await fetchHotmartSales(tokenResult.token, start, end)
         hotmart = summarizeHotmart(sales)
       } catch (e) {
