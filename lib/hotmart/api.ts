@@ -104,7 +104,11 @@ async function fetchAllPages<T>(
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     })
-    if (!res.ok) break
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.log("[v0] hotmart fetchAllPages: HTTP error", { endpoint, status: res.status, body: body.slice(0, 300) })
+      break
+    }
     const json = await res.json()
     const { items, next } = extract(json)
     all.push(...items)

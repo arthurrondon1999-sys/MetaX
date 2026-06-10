@@ -53,15 +53,25 @@ export async function GET(request: Request) {
   let hotmartConnected = false
   let hotmartError: string | undefined
 
+  console.log("[v0] summary: hotmartIntegration present?", Boolean(hotmartIntegration))
   if (hotmartIntegration) {
     const tokenResult = await getHotmartToken(hotmartIntegration.basicCredential)
+    console.log("[v0] summary: hotmart token result ->", { ok: tokenResult.ok, error: tokenResult.error })
     if (tokenResult.ok && tokenResult.token) {
       hotmartConnected = true
       try {
         const { start, end } = presetToRange(datePreset)
+        console.log("[v0] summary: hotmart range (ms) ->", { start, end, datePreset })
         const sales = await fetchHotmartSales(tokenResult.token, start, end)
+        console.log("[v0] summary: hotmart sales fetched ->", sales.length)
         hotmart = summarizeHotmart(sales)
-      } catch {
+        console.log("[v0] summary: hotmart summary ->", {
+          revenue: hotmart.revenue,
+          sales: hotmart.sales,
+          totalTransactions: hotmart.totalTransactions,
+        })
+      } catch (e) {
+        console.log("[v0] summary: hotmart fetch ERROR ->", e instanceof Error ? e.message : e)
         hotmartError = "Erro ao buscar vendas na Hotmart"
       }
     } else {
