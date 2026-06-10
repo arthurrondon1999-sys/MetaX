@@ -160,28 +160,43 @@ export async function fetchHotmartSales(
     }
   }
 
+  let fallbackCount = 0
   const sales = history.map((item) => {
     const p = item.purchase ?? {}
     const transaction = p.transaction ?? ""
+    const grossValue = p.price?.value ?? 0
+    const matchedCommission = commissionMap.get(transaction)
+    // Fallback: se a comissão do produtor não veio (endpoint de comissões
+    // falhou ou não casou a transação), usamos o valor bruto da venda do
+    // histórico em vez de zerar o faturamento.
+    let commissionValue: number
+    if (matchedCommission != null && matchedCommission > 0) {
+      commissionValue = matchedCommission
+    } else {
+      commissionValue = grossValue
+      fallbackCount++
+    }
     return {
       transaction,
       productName: item.product?.name ?? "Produto",
       productId: item.product?.id != null ? String(item.product.id) : "",
       buyerName: item.buyer?.name?.trim() ?? "",
-      value: p.price?.value ?? 0,
+      value: grossValue,
       currency: p.price?.currency_code ?? "USD",
-      commissionValue: commissionMap.get(transaction) ?? 0,
+      commissionValue,
       status: p.status ?? "UNKNOWN",
       paymentType: p.payment?.type ?? "",
       purchaseDate: p.order_date ? new Date(p.order_date).toISOString() : null,
     }
   })
 
-  const matched = sales.filter((s) => s.commissionValue > 0).length
+  const matched = sales.length - fallbackCount
   console.log(
-    "[v0] hotmart fetchHotmartSales: vendas com comissão casada ->",
+    "[v0] hotmart fetchHotmartSales: comissão casada ->",
     matched,
-    "/",
+    "| fallback p/ valor bruto ->",
+    fallbackCount,
+    "| total ->",
     sales.length,
   )
 
