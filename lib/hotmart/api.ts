@@ -132,6 +132,9 @@ export async function fetchHotmartSales(
     end_date: String(endDate),
   }
 
+  // Busca histórico de vendas e comissões em paralelo. A busca de comissões é
+  // tolerante a falhas: se ela falhar, ainda retornamos as vendas do histórico
+  // (com receita derivada por fallback) em vez de zerar tudo.
   const [history, commissions] = await Promise.all([
     fetchAllPages<HotmartHistoryItem>(token, "sales/history", baseParams, (json) => ({
       items: json.items ?? [],
@@ -140,8 +143,13 @@ export async function fetchHotmartSales(
     fetchAllPages<HotmartCommissionItem>(token, "sales/commissions", baseParams, (json) => ({
       items: json.items ?? [],
       next: json.page_info?.next_page_token ?? null,
-    })),
+    })).catch((err) => {
+      console.log("[v0] hotmart: falha ao buscar sales/commissions ->", err instanceof Error ? err.message : err)
+      return [] as HotmartCommissionItem[]
+    }),
   ])
+
+  console.log("[v0] hotmart fetchHotmartSales: history items ->", history.length, "commission items ->", commissions.length)
 
   // Mapa transação -> comissão do produtor (em USD/payout)
   const commissionMap = new Map<string, number>()
@@ -152,7 +160,7 @@ export async function fetchHotmartSales(
     }
   }
 
-  return history.map((item) => {
+  const sales = history.map((item) => {
     const p = item.purchase ?? {}
     const transaction = p.transaction ?? ""
     return {
@@ -168,4 +176,14 @@ export async function fetchHotmartSales(
       purchaseDate: p.order_date ? new Date(p.order_date).toISOString() : null,
     }
   })
+
+  const matched = sales.filter((s) => s.commissionValue > 0).length
+  console.log(
+    "[v0] hotmart fetchHotmartSales: vendas com comissão casada ->",
+    matched,
+    "/",
+    sales.length,
+  )
+
+  return sales
 }

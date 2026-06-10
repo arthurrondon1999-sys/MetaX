@@ -78,7 +78,16 @@ export type SummarySources = {
 export function useCombinedSummary(datePreset = "last_30d") {
   const { data, error, isLoading, mutate } = useSWR<{ summary: CombinedSummary; sources: SummarySources }>(
     `/api/summary?date_preset=${datePreset}`,
-    fetcher,
+    async (url: string) => {
+      const json = await fetcher(url)
+      // Log da resposta real para depuração no console do navegador
+      console.log("[v0] /api/summary resposta:", {
+        datePreset,
+        summary: json?.summary,
+        sources: json?.sources,
+      })
+      return json
+    },
     { revalidateOnFocus: false },
   )
   return {

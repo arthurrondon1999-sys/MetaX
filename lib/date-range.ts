@@ -27,6 +27,13 @@ export function presetToRange(preset: string): { start: number; end: number } {
       const start = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
       return { start, end }
     }
+    case "this_week_mon_today": {
+      // Início da semana (segunda-feira) até agora
+      const day = now.getDay() // 0=Dom, 1=Seg, ...
+      const diffToMonday = day === 0 ? 6 : day - 1
+      const start = startOfToday - diffToMonday * 24 * 60 * 60 * 1000
+      return { start, end }
+    }
     case "last_month": {
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime()
       const lastEnd = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
