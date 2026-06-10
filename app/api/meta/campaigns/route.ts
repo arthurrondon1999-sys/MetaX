@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import { getMetaIntegration } from "@/lib/meta/integration"
-import { getAdAccounts, getCampaigns, MetaApiError } from "@/lib/meta/api"
+import { getCampaigns, MetaApiError } from "@/lib/meta/api"
 import { presetToMetaDateSpec } from "@/lib/date-range"
+
+// Conta de anúncios conhecida — usada diretamente em vez de /me/adaccounts.
+const KNOWN_AD_ACCOUNT_ID = "act_1336684461550331"
 
 export async function GET(request: Request) {
   const integration = await getMetaIntegration()
@@ -11,18 +14,9 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const datePreset = searchParams.get("date_preset") || "last_30d"
-  let accountId = searchParams.get("account_id") || integration.accountId
+  const accountId = searchParams.get("account_id") || integration.accountId || KNOWN_AD_ACCOUNT_ID
 
   try {
-    // Se nenhuma conta definida, usa a primeira conta disponível
-    if (!accountId) {
-      const accounts = await getAdAccounts(integration.token)
-      if (accounts.length === 0) {
-        return NextResponse.json({ campaigns: [], accountId: null })
-      }
-      accountId = accounts[0].account_id
-    }
-
     const campaigns = await getCampaigns(accountId, integration.token, presetToMetaDateSpec(datePreset))
     return NextResponse.json({ campaigns, accountId })
   } catch (error) {
