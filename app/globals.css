@@ -249,3 +249,69 @@
 .animate-data-flash {
   animation: data-flash 1.2s ease-out;
 }
+
+/* react-day-picker (date range picker) — tema escuro MetaX */
+.metax-rdp {
+  --rdp-accent-color: #0066ff;
+  --rdp-accent-background-color: rgba(0, 102, 255, 0.18);
+  --rdp-today-color: #00d4ff;
+  --rdp-range_middle-color: #ffffff;
+}
+.metax-rdp .rdp-root {
+  --rdp-day-width: 2.25rem;
+  --rdp-day-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-day_button-height: 2.25rem;
+  color: #ffffff;
+}
+.metax-rdp .rdp-months {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.metax-rdp .rdp-month_caption {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: capitalize;
+}
+.metax-rdp .rdp-weekday {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.metax-rdp .rdp-day_button {
+  color: #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+}
+.metax-rdp .rdp-day_button:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.metax-rdp .rdp-outside .rdp-day_button {
+  color: rgba(148, 163, 184, 0.45);
+}
+.metax-rdp .rdp-today .rdp-day_button {
+  color: #00d4ff;
+  font-weight: 700;
+}
+.metax-rdp .rdp-range_start .rdp-day_button,
+.metax-rdp .rdp-range_end .rdp-day_button,
+.metax-rdp .rdp-selected .rdp-day_button {
+  background: linear-gradient(135deg, #0066ff, #8b00ff);
+  color: #ffffff;
+  font-weight: 600;
+}
+.metax-rdp .rdp-range_middle .rdp-day_button {
+  background-color: rgba(0, 102, 255, 0.18);
+  color: #ffffff;
+  border-radius: 0;
+}
+.metax-rdp .rdp-chevron {
+  fill: #94a3b8;
+}
+.metax-rdp button.rdp-button_previous:hover .rdp-chevron,
+.metax-rdp button.rdp-button_next:hover .rdp-chevron {
+  fill: #ffffff;
+}

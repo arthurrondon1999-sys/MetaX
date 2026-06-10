@@ -104,16 +104,30 @@ export async function getAdAccounts(token: string): Promise<MetaAccount[]> {
   return data.data ?? []
 }
 
+/**
+ * Spec de período aceito pelos endpoints de insights: ou um `date_preset`
+ * (string) ou um intervalo customizado `{ since, until }` em "YYYY-MM-DD".
+ */
+export type DateSpec = string | { since: string; until: string }
+
+/** Gera o trecho `.date_preset(...)` ou `.time_range(...)` para os insights. */
+function insightsDateModifier(spec: DateSpec): string {
+  if (typeof spec === "string") return `.date_preset(${spec})`
+  return `.time_range({'since':'${spec.since}','until':'${spec.until}'})`
+}
+
 export async function getCampaigns(
   accountId: string,
   token: string,
-  datePreset = "last_30d",
+  date: DateSpec = "last_30d",
 ): Promise<MetaCampaign[]> {
   const normalizedId = accountId.startsWith("act_") ? accountId : `act_${accountId}`
   const insightsFields =
-    "spend,impressions,clicks,cpc,cpm,ctr,reach,frequency,actions,action_values,cost_per_action_type"
+    "spend,impressions,clicks,cpc,cpm,ctr,reach,frequency,actions,action_values,cost_per_action_type," +
+    "video_avg_time_watched_actions,video_p25_watched_actions,video_p50_watched_actions," +
+    "video_p75_watched_actions,video_p100_watched_actions,video_thruplay_watched_actions,video_play_actions"
   const data = await metaFetch<{ data: MetaCampaign[] }>(`${normalizedId}/campaigns`, token, {
-    fields: `id,name,status,objective,insights.date_preset(${datePreset}){${insightsFields}}`,
+    fields: `id,name,status,objective,daily_budget,lifetime_budget,insights${insightsDateModifier(date)}{${insightsFields}}`,
     limit: "200",
   })
   // insights vem como { data: [insight] } — normalizamos para objeto único
