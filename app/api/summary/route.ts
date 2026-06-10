@@ -53,8 +53,11 @@ export async function GET(request: Request) {
   let hotmartConnected = false
   let hotmartError: string | undefined
 
+  console.log("[v0] summary: Hotmart token found:", hotmartIntegration ? "yes" : "no")
+
   if (hotmartIntegration) {
     const tokenResult = await getHotmartToken(hotmartIntegration.basicCredential)
+    console.log("[v0] summary: Hotmart access token obtido:", tokenResult.ok && tokenResult.token ? "yes" : "no")
     if (tokenResult.ok && tokenResult.token) {
       hotmartConnected = true
       try {
