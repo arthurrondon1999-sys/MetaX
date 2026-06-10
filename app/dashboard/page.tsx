@@ -88,6 +88,13 @@ export default function DashboardPage() {
             <FilterDropdown label="Produto" value={produto} onChange={setProduto} options={["Qualquer"]} />
           </div>
 
+          {/* Debug temporário: valores brutos recebidos do /api/summary */}
+          <p className="text-xs text-muted-foreground font-mono">
+            {summaryLoading
+              ? "Debug: carregando…"
+              : `Debug: hotmart_revenue=${summary?.revenue ?? "undefined"}, hotmart_sales=${summary?.sales ?? "undefined"}, meta_spend=${summary?.spend ?? "undefined"}`}
+          </p>
+
           {/* Connection banner */}
           {sources && (!sources.meta.connected || !sources.hotmart.connected) && (
             <Link
