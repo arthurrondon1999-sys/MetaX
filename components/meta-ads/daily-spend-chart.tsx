@@ -83,9 +83,9 @@ export function DailySpendChart() {
                 }}
                 labelStyle={{ color: "white", fontWeight: "bold" }}
                 itemStyle={{ color: "rgba(255,255,255,0.8)" }}
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   if (name === "investimento") return [`R$ ${value}`, "Investimento"]
-                  return [value, "Resultados"]
+                  return [value as number, "Resultados"]
                 }}
               />
               <Area
