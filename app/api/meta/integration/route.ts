@@ -70,6 +70,22 @@ export async function POST(request: Request) {
   if (longLivedToken) {
     const { error } = await supabase.from("integrations").upsert(payload, { onConflict: "user_id,platform" })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Confirma o que realmente ficou salvo no Supabase
+    const { data: saved } = await supabase
+      .from("integrations")
+      .select("access_token, expires_at")
+      .eq("user_id", user.id)
+      .eq("platform", "meta")
+      .single()
+    console.log(
+      "[v0] integration save: token salvo é o de longa duração?",
+      saved?.access_token === longLivedToken,
+      "| é igual ao token original enviado?",
+      saved?.access_token === accessToken,
+      "| expires_at salvo:",
+      saved?.expires_at,
+    )
   } else {
     const { error } = await supabase
       .from("integrations")

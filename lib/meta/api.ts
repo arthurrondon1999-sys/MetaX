@@ -87,6 +87,7 @@ export type LongLivedToken = {
  * (caso de System User tokens), `expiresAt` volta como null.
  */
 export async function exchangeForLongLivedToken(shortLivedToken: string): Promise<LongLivedToken> {
+  console.log("[v0] exchange: token sendo enviado (curta duração):", shortLivedToken)
   const data = await metaFetch<{ access_token: string; expires_in?: number; token_type?: string }>(
     "oauth/access_token",
     shortLivedToken,
@@ -96,11 +97,19 @@ export async function exchangeForLongLivedToken(shortLivedToken: string): Promis
       client_secret: META_APP_SECRET,
     },
   )
+  console.log("[v0] exchange: resposta completa do Facebook:", JSON.stringify(data))
 
   const expiresAt =
     typeof data.expires_in === "number" && data.expires_in > 0
       ? new Date(Date.now() + data.expires_in * 1000).toISOString()
       : null
+
+  console.log(
+    "[v0] exchange: token de longa duração recebido?",
+    data.access_token !== shortLivedToken,
+    "| expiresAt:",
+    expiresAt,
+  )
 
   return { token: data.access_token, expiresAt }
 }
@@ -132,9 +141,7 @@ export async function getCampaigns(
 ): Promise<MetaCampaign[]> {
   const normalizedId = accountId.startsWith("act_") ? accountId : `act_${accountId}`
   const insightsFields =
-    "spend,impressions,clicks,cpc,cpm,ctr,reach,frequency,actions,action_values,cost_per_action_type," +
-    "video_avg_time_watched_actions,video_p25_watched_actions,video_p50_watched_actions," +
-    "video_p75_watched_actions,video_p100_watched_actions,video_thruplay_watched_actions,video_play_actions"
+    "spend,impressions,clicks,cpc,cpm,ctr,reach,frequency,actions,action_values,cost_per_action_type,purchase_roas"
   const data = await metaFetch<{ data: MetaCampaign[] }>(`${normalizedId}/campaigns`, token, {
     fields: `id,name,status,objective,daily_budget,lifetime_budget,insights${insightsDateModifier(date)}{${insightsFields}}`,
     limit: "200",
