@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Sidebar } from "@/components/shared/sidebar"
+import { MobileNav } from "@/components/shared/mobile-nav"
 import { PageHeader } from "@/components/integracoes/page-header"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { AdPlatformsSection } from "@/components/integracoes/ad-platforms-section"
@@ -27,10 +28,11 @@ export default function IntegracoesPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="integracoes" />
+      <MobileNav activePage="integracoes" />
       <PageHeader title="Integrações" />
 
-      <main className="ml-60 pt-16">
-        <div className="p-6 space-y-10 max-w-6xl">
+      <main className="md:ml-60 pt-16 pb-24 md:pb-0">
+        <div className="p-4 md:p-6 space-y-10 max-w-6xl">
           {/* Intro subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}

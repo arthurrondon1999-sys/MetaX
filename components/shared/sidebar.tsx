@@ -46,7 +46,7 @@ export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
       initial={{ x: -240, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="fixed left-0 top-0 bottom-0 w-60 bg-sidebar border-r border-sidebar-border/10 flex flex-col z-50"
+      className="hidden md:flex fixed left-0 top-0 bottom-0 w-60 bg-sidebar border-r border-sidebar-border/10 flex-col z-50"
     >
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border/10">

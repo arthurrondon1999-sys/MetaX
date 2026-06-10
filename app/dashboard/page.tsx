@@ -5,6 +5,7 @@ import Link from "next/link"
 import { PlugZap } from "lucide-react"
 import { format } from "date-fns"
 import { Sidebar } from "@/components/shared/sidebar"
+import { MobileNav } from "@/components/shared/mobile-nav"
 import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { DateRangePicker, type DateRange } from "@/components/shared/date-range-picker"
@@ -61,6 +62,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="dashboard" />
+      <MobileNav activePage="dashboard" />
       <PageHeader
         title="Resumo"
         updatedLabel={formatLastRefreshed(lastRefreshed)}
@@ -68,8 +70,8 @@ export default function DashboardPage() {
         onRefresh={refreshNow}
       />
 
-      <main className="ml-60 pt-20">
-        <div className="p-6 space-y-6 max-w-7xl">
+      <main className="md:ml-60 pt-20 pb-24 md:pb-0">
+        <div className="p-4 md:p-6 space-y-6 max-w-7xl">
           {/* Filters */}
           <div className="flex flex-wrap items-start gap-3">
             <FilterDropdown

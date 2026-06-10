@@ -1,8 +1,9 @@
 import { Analytics } from '@vercel/analytics/next'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, Inter } from 'next/font/google'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { CurrencyBootstrap } from '@/components/shared/currency-bootstrap'
+import { PwaProvider } from '@/components/shared/pwa-provider'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({ 
@@ -20,6 +21,13 @@ export const metadata: Metadata = {
   title: 'MetaX - Advanced Ads Intelligence',
   description: 'Facebook Ads analytics dashboard powered by advanced AI',
   generator: 'v0.app',
+  manifest: '/manifest.json',
+  applicationName: 'MetaX',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MetaX',
+  },
   icons: {
     icon: [
       {
@@ -35,8 +43,15 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icons/icon-180.png',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#050818',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -47,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} bg-background`}>
       <body className="font-sans antialiased">
+        <PwaProvider />
         <AuthProvider>
           <CurrencyBootstrap>{children}</CurrencyBootstrap>
         </AuthProvider>

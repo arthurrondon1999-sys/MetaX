@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/shared/sidebar"
+import { MobileNav } from "@/components/shared/mobile-nav"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
@@ -197,6 +198,7 @@ export default function RelatoriosPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="relatorios" />
+      <MobileNav activePage="relatorios" />
       <PageHeader
         title="Relatórios"
         subtitle="Use essa tela para visualizar relatórios diários."
@@ -211,8 +213,8 @@ export default function RelatoriosPage() {
         }
       />
 
-      <main className="ml-60 pt-20">
-        <div className="p-6 space-y-5 max-w-[1400px]">
+      <main className="md:ml-60 pt-20 pb-24 md:pb-0">
+        <div className="p-4 md:p-6 space-y-5 max-w-[1400px]">
           {/* Toolbar */}
           <div className="flex items-center gap-2">
             <button

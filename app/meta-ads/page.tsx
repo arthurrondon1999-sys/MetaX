@@ -6,6 +6,7 @@ import { Settings2, Upload, BarChart3, CheckCircle2, Search, AlertTriangle, Plug
 import Link from "next/link"
 import { format } from "date-fns"
 import { Sidebar } from "@/components/shared/sidebar"
+import { MobileNav } from "@/components/shared/mobile-nav"
 import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { DateRangePicker, type DateRange } from "@/components/shared/date-range-picker"
@@ -143,6 +144,7 @@ export default function MetaAdsPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="meta-ads" />
+      <MobileNav activePage="meta-ads" />
       <PageHeader
         title="Meta"
         titleIcon={
@@ -156,8 +158,8 @@ export default function MetaAdsPage() {
         onRefresh={refreshNow}
       />
 
-      <main className="ml-60 pt-20">
-        <div className="p-6 space-y-5 max-w-[1400px]">
+      <main className="md:ml-60 pt-20 pb-24 md:pb-0">
+        <div className="p-4 md:p-6 space-y-5 max-w-[1400px]">
           {/* Tabs */}
           <div className="flex items-center gap-6 border-b border-white/10">
             {TABS.map((tab) => {

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Plus, MoreHorizontal, Trash2, Search } from "lucide-react"
 import { Sidebar } from "@/components/shared/sidebar"
+import { MobileNav } from "@/components/shared/mobile-nav"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
@@ -88,6 +89,7 @@ export default function DespesasPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="despesas" />
+      <MobileNav activePage="despesas" />
       <PageHeader
         title="Despesas"
         subtitle="Use essa tela para adicionar despesas personalizadas."
@@ -105,8 +107,8 @@ export default function DespesasPage() {
         }
       />
 
-      <main className="ml-60 pt-20">
-        <div className="p-6 space-y-5 max-w-[1400px]">
+      <main className="md:ml-60 pt-20 pb-24 md:pb-0">
+        <div className="p-4 md:p-6 space-y-5 max-w-[1400px]">
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <div className="flex flex-col gap-1.5 min-w-[200px]">

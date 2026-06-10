@@ -43,17 +43,20 @@ export function PageHeader({
   const isBusy = spinning || refreshing
 
   return (
-    <header className="fixed top-0 left-60 right-0 z-40 bg-[#050818]/80 backdrop-blur-xl border-b border-white/10">
-      <div className="flex items-center justify-between px-6 py-3.5">
-        <div className="flex flex-col">
+    <header
+      className="fixed top-0 left-0 md:left-60 right-0 z-40 bg-[#050818]/80 backdrop-blur-xl border-b border-white/10"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-3 md:py-3.5">
+        <div className="flex min-w-0 flex-col">
           <div className="flex items-center gap-2.5">
             {titleIcon}
-            <h1 className="text-xl font-bold text-white">{title}</h1>
+            <h1 className="truncate text-lg md:text-xl font-bold text-white">{title}</h1>
           </div>
-          {subtitle && <p className="text-xs text-[#94A3B8] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="hidden sm:block text-xs text-[#94A3B8] mt-0.5">{subtitle}</p>}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 md:gap-3">
           {actions}
           {showCurrency && <CurrencyToggle />}
 
@@ -69,11 +72,12 @@ export function PageHeader({
           <button
             onClick={handleRefresh}
             disabled={isBusy}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-70"
+            aria-label="Atualizar"
+            className="flex items-center gap-2 rounded-lg px-3 md:px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-70"
             style={{ background: "linear-gradient(135deg, #0066FF, #8B00FF)" }}
           >
             <RefreshCw className={`w-4 h-4 ${isBusy ? "animate-spin" : ""}`} />
-            Atualizar
+            <span className="hidden sm:inline">Atualizar</span>
           </button>
         </div>
       </div>
