@@ -11,7 +11,7 @@ import { DateRangePicker, type DateRange } from "@/components/shared/date-range-
 import { MetricsGrid } from "@/components/dashboard/metrics-grid"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { useCombinedSummary } from "@/hooks/use-hotmart"
-import { useAutoRefresh, formatCountdown, formatLastRefreshed } from "@/hooks/use-auto-refresh"
+import { useAutoRefresh, formatLastRefreshed } from "@/hooks/use-auto-refresh"
 
 const PERIOD_TO_PRESET: Record<string, string> = {
   Hoje: "today",
@@ -42,9 +42,9 @@ export default function DashboardPage() {
 
   const { summary, sources, isLoading: summaryLoading, mutate } = useCombinedSummary(datePreset)
 
-  const { secondsLeft, refreshing, lastRefreshed, refreshNow } = useAutoRefresh({
+  const { refreshing, lastRefreshed, refreshNow } = useAutoRefresh({
     onRefresh: () => mutate(),
-    enabled: true,
+    enabled: false,
   })
 
   // Dispara o flash verde quando novos dados chegam
@@ -64,7 +64,6 @@ export default function DashboardPage() {
       <PageHeader
         title="Resumo"
         updatedLabel={formatLastRefreshed(lastRefreshed)}
-        countdownLabel={`Próxima atualização em ${formatCountdown(secondsLeft)}`}
         refreshing={refreshing}
         onRefresh={refreshNow}
       />

@@ -10,10 +10,6 @@ import {
   formatDecimal,
   positiveNegativeColor,
   roiMultiplierColor,
-  cpaColor,
-  COLOR_POSITIVE,
-  COLOR_NEGATIVE,
-  COLOR_NA,
   COLOR_NEUTRAL,
 } from "@/lib/meta/metrics"
 
@@ -80,8 +76,6 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
 
   const money = (v: number) => formatMoney(has ? v : 0)
 
-  // Faturamento: vermelho se < gastos, verde se >= gastos
-  const revenueColor = !has ? COLOR_NA : revenue >= spend ? COLOR_POSITIVE : COLOR_NEGATIVE
   // ROI multiplicador
   const roiText = has && roi ? `${formatDecimal(roi)}x` : "N/A"
 
@@ -90,28 +84,18 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
       {/* Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="Faturamento Líquido"
-          value={money(revenue)}
-          tip="Comissão líquida do produtor nas vendas aprovadas da Hotmart. Vermelho quando menor que os gastos com anúncios."
-          delay={0}
-          accent={revenueColor}
-          loading={loading}
-          flash={flash}
-        />
-        <MetricCard
           label="Gastos com Anúncios"
           value={money(spend)}
           tip="Total gasto em anúncios no Meta"
-          delay={0.05}
+          delay={0}
           loading={loading}
           flash={flash}
         />
         <MetricCard
-          label="IOF (3,5%)"
-          value={money(iof)}
-          tip="Imposto sobre Operações Financeiras: 3,5% sobre os gastos com anúncios (cobrança internacional no cartão)"
-          delay={0.1}
-          accent={COLOR_NEGATIVE}
+          label="Faturamento"
+          value={money(revenue)}
+          tip="Comissão líquida do produtor nas vendas aprovadas da Hotmart."
+          delay={0.05}
           loading={loading}
           flash={flash}
         />
@@ -119,8 +103,17 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
           label="Lucro"
           value={money(profit)}
           tip="Faturamento líquido menos gastos com anúncios e IOF"
-          delay={0.15}
+          delay={0.1}
           accent={positiveNegativeColor(profit, has)}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="ROI"
+          value={roiText}
+          tip="Retorno sobre investimento (faturamento ÷ gastos). Acima de 1.0x = lucro | Abaixo de 1.0x = prejuízo"
+          delay={0.15}
+          accent={roiMultiplierColor(roi, has)}
           loading={loading}
           flash={flash}
         />
@@ -129,19 +122,10 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
       {/* Row 2 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="Ticket Médio"
-          value={money(ticket)}
-          tip="Faturamento médio por venda aprovada"
+          label="IOF (3,5%)"
+          value={money(iof)}
+          tip="Imposto sobre Operações Financeiras: 3,5% sobre os gastos com anúncios (cobrança internacional no cartão)"
           delay={0.2}
-          loading={loading}
-          flash={flash}
-        />
-        <MetricCard
-          label="Vendas"
-          value={has ? String(sales) : "0"}
-          tip="Total de vendas aprovadas na Hotmart"
-          delay={0.25}
-          accent={positiveNegativeColor(sales, has)}
           loading={loading}
           flash={flash}
         />
@@ -149,17 +133,23 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
           label="CPA"
           value={has && cpa ? money(cpa) : money(0)}
           tip="Custo por aquisição (gastos ÷ vendas)"
-          delay={0.3}
-          accent={has && cpa ? cpaColor(cpa) : COLOR_NA}
+          delay={0.25}
           loading={loading}
           flash={flash}
         />
         <MetricCard
-          label="ROI"
-          value={roiText}
-          tip="Retorno sobre investimento (faturamento ÷ gastos). Acima de 1.0x = lucro | Abaixo de 1.0x = prejuízo"
+          label="Vendas"
+          value={has ? String(sales) : "0"}
+          tip="Total de vendas aprovadas na Hotmart"
+          delay={0.3}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="Ticket Médio"
+          value={money(ticket)}
+          tip="Faturamento médio por venda aprovada"
           delay={0.35}
-          accent={roiMultiplierColor(roi, has)}
           loading={loading}
           flash={flash}
         />

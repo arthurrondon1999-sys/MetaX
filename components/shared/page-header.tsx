@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Bell, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { useState } from "react"
 import type { ReactNode } from "react"
 import { CurrencyToggle } from "@/components/shared/currency-toggle"
@@ -76,19 +75,6 @@ export function PageHeader({
             <RefreshCw className={`w-4 h-4 ${isBusy ? "animate-spin" : ""}`} />
             Atualizar
           </button>
-          <button className="relative p-2 rounded-lg text-[#94A3B8] hover:text-white hover:bg-white/5 transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-neon-purple" />
-          </button>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-electric-blue to-neon-purple flex items-center justify-center text-white text-sm font-semibold">
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              MX
-            </motion.span>
-          </div>
         </div>
       </div>
     </header>
