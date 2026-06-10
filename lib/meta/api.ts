@@ -123,38 +123,136 @@ export async function getCampaigns(
   })
 }
 
+/** Soma duas listas de actions (action_type -> value) acumulando valores. */
+function mergeActions(
+  acc: Map<string, number>,
+  list: { action_type: string; value: string }[] | undefined,
+) {
+  if (!list) return
+  for (const a of list) {
+    acc.set(a.action_type, (acc.get(a.action_type) ?? 0) + Number.parseFloat(a.value || "0"))
+  }
+}
+
+function mapToActions(map: Map<string, number>): { action_type: string; value: string }[] {
+  return Array.from(map.entries()).map(([action_type, value]) => ({ action_type, value: String(value) }))
+}
+
+/**
+ * Insights agregados no nível da conta SEM exigir a permissão `read_insights`.
+ * Em vez de chamar `act_X/insights`, busca as campanhas com insights aninhados
+ * (`getCampaigns`) e soma os valores. cpc/cpm/ctr/frequency são recalculados a
+ * partir dos totais agregados.
+ */
 export async function getAccountInsights(
   accountId: string,
   token: string,
   datePreset = "last_30d",
 ): Promise<MetaInsight | null> {
-  const normalizedId = accountId.startsWith("act_") ? accountId : `act_${accountId}`
-  const fields =
-    "spend,impressions,clicks,cpc,cpm,ctr,reach,frequency,actions,action_values,cost_per_action_type"
-  const data = await metaFetch<{ data: MetaInsight[] }>(`${normalizedId}/insights`, token, {
-    fields,
-    date_preset: datePreset,
-  })
-  return data.data?.[0] ?? null
+  const campaigns = await getCampaigns(accountId, token, datePreset)
+  if (campaigns.length === 0) return null
+
+  let spend = 0
+  let impressions = 0
+  let clicks = 0
+  let reach = 0
+  const actions = new Map<string, number>()
+  const actionValues = new Map<string, number>()
+  const costPerAction = new Map<string, number>()
+  let hasData = false
+
+  for (const c of campaigns) {
+    const i = c.insights
+    if (!i) continue
+    hasData = true
+    spend += Number.parseFloat(i.spend || "0")
+    impressions += Number.parseInt(i.impressions || "0", 10)
+    clicks += Number.parseInt(i.clicks || "0", 10)
+    reach += Number.parseInt(i.reach || "0", 10)
+    mergeActions(actions, i.actions)
+    mergeActions(actionValues, i.action_values)
+  }
+
+  if (!hasData) return null
+
+  // Recalcula custo por ação a partir dos totais (spend / nº de ações)
+  for (const [type, count] of actions.entries()) {
+    if (count > 0) costPerAction.set(type, spend / count)
+  }
+
+  const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+  const cpc = clicks > 0 ? spend / clicks : 0
+  const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0
+  const frequency = reach > 0 ? impressions / reach : 0
+
+  return {
+    spend: String(spend),
+    impressions: String(impressions),
+    clicks: String(clicks),
+    reach: String(reach),
+    ctr: String(ctr),
+    cpc: String(cpc),
+    cpm: String(cpm),
+    frequency: String(frequency),
+    actions: mapToActions(actions),
+    action_values: mapToActions(actionValues),
+    cost_per_action_type: mapToActions(costPerAction),
+  }
 }
 
 export type MetaDailyInsight = MetaInsight & { date_start: string; date_stop: string }
 
-/** Insights do Meta com quebra diária (time_increment=1). */
+/**
+ * Insights com quebra diária SEM exigir `read_insights`. Busca campanhas com
+ * insights aninhados em `time_increment(1)` e agrega o gasto/ações por dia.
+ */
 export async function getDailyInsights(
   accountId: string,
   token: string,
   datePreset = "last_30d",
 ): Promise<MetaDailyInsight[]> {
   const normalizedId = accountId.startsWith("act_") ? accountId : `act_${accountId}`
-  const fields = "spend,impressions,clicks,actions,action_values"
-  const data = await metaFetch<{ data: MetaDailyInsight[] }>(`${normalizedId}/insights`, token, {
-    fields,
-    date_preset: datePreset,
-    time_increment: "1",
-    limit: "365",
+  const insightsFields = "spend,impressions,clicks,actions,action_values"
+  const data = await metaFetch<{
+    data: { insights?: { data?: MetaDailyInsight[] } }[]
+  }>(`${normalizedId}/campaigns`, token, {
+    fields: `id,name,status,insights.date_preset(${datePreset}).time_increment(1){${insightsFields}}`,
+    limit: "200",
   })
-  return data.data ?? []
+
+  // Agrega por data (date_start) somando entre todas as campanhas
+  const byDay = new Map<
+    string,
+    { spend: number; impressions: number; clicks: number; actions: Map<string, number>; actionValues: Map<string, number> }
+  >()
+
+  for (const campaign of data.data ?? []) {
+    const rows = campaign.insights?.data ?? []
+    for (const row of rows) {
+      const key = row.date_start
+      const entry =
+        byDay.get(key) ??
+        { spend: 0, impressions: 0, clicks: 0, actions: new Map<string, number>(), actionValues: new Map<string, number>() }
+      entry.spend += Number.parseFloat(row.spend || "0")
+      entry.impressions += Number.parseInt(row.impressions || "0", 10)
+      entry.clicks += Number.parseInt(row.clicks || "0", 10)
+      mergeActions(entry.actions, row.actions)
+      mergeActions(entry.actionValues, row.action_values)
+      byDay.set(key, entry)
+    }
+  }
+
+  return Array.from(byDay.entries())
+    .map(([date, e]) => ({
+      date_start: date,
+      date_stop: date,
+      spend: String(e.spend),
+      impressions: String(e.impressions),
+      clicks: String(e.clicks),
+      actions: mapToActions(e.actions),
+      action_values: mapToActions(e.actionValues),
+    }))
+    .sort((a, b) => a.date_start.localeCompare(b.date_start))
 }
 
 // Helpers para extrair valores de actions
