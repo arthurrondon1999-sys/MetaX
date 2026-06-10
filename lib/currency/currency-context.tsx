@@ -55,7 +55,7 @@ export function CurrencyProvider({
   /** Currency detected from the Meta account, used as initial default */
   detected?: Currency | null
 }) {
-  const [currency, setCurrencyState] = useState<Currency>("BRL")
+  const [currency, setCurrencyState] = useState<Currency>("USD")
   const [userSet, setUserSet] = useState(false)
   const [rate, setRate] = useState<number>(FALLBACK_RATE)
 

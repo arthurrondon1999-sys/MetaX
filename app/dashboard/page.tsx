@@ -24,7 +24,7 @@ const PERIOD_TO_PRESET: Record<string, string> = {
 const PERIOD_OPTIONS = ["Hoje", "Ontem", "Últimos 7 dias", "Últimos 30 dias", "Este mês", "Personalizado"]
 
 export default function DashboardPage() {
-  const [periodo, setPeriodo] = useState("Últimos 30 dias")
+  const [periodo, setPeriodo] = useState("Hoje")
   const [plataforma, setPlataforma] = useState("Qualquer")
   const [produto, setProduto] = useState("Qualquer")
   const [customRange, setCustomRange] = useState<DateRange | undefined>()
