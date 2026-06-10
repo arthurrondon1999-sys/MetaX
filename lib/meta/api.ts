@@ -105,6 +105,25 @@ export async function getAccountInsights(
   return data.data?.[0] ?? null
 }
 
+export type MetaDailyInsight = MetaInsight & { date_start: string; date_stop: string }
+
+/** Insights do Meta com quebra diária (time_increment=1). */
+export async function getDailyInsights(
+  accountId: string,
+  token: string,
+  datePreset = "last_30d",
+): Promise<MetaDailyInsight[]> {
+  const normalizedId = accountId.startsWith("act_") ? accountId : `act_${accountId}`
+  const fields = "spend,impressions,clicks,actions,action_values"
+  const data = await metaFetch<{ data: MetaDailyInsight[] }>(`${normalizedId}/insights`, token, {
+    fields,
+    date_preset: datePreset,
+    time_increment: "1",
+    limit: "365",
+  })
+  return data.data ?? []
+}
+
 // Helpers para extrair valores de actions
 export function findActionValue(
   list: { action_type: string; value: string }[] | undefined,

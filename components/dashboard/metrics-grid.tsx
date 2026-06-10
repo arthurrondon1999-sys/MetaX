@@ -5,6 +5,7 @@ import { InfoIcon } from "@/components/shared/info-icon"
 import { Skeleton } from "@/components/shared/skeleton"
 import { cn } from "@/lib/utils"
 import { useCurrency } from "@/lib/currency/currency-context"
+import type { CombinedSummary } from "@/lib/combined-metrics"
 import {
   formatDecimal,
   positiveNegativeColor,
@@ -73,25 +74,31 @@ function MetricCard({ label, value, tip, className, delay = 0, accent, loading, 
 
 interface MetricsGridProps {
   summary?: MetaSummary | null
+  /** Métricas combinadas Meta + Hotmart (faturamento real de vendas) */
+  combined?: CombinedSummary | null
   loading?: boolean
   /** Dispara o flash verde nos cards quando os dados são atualizados */
   flash?: boolean
 }
 
-export function MetricsGrid({ summary, loading = false, flash = false }: MetricsGridProps) {
+export function MetricsGrid({ summary, combined, loading = false, flash = false }: MetricsGridProps) {
   const { formatMoney } = useCurrency()
 
-  const revenue = summary?.revenue ?? 0
-  const spend = summary?.spend ?? 0
-  const profit = revenue - spend
-  const roas = summary?.roas ?? 0
-  const cpa = summary?.cpa ?? 0
-  const purchases = summary?.purchases ?? 0
-  const arpu = purchases > 0 ? revenue / purchases : 0
-  const roi = spend > 0 ? ((revenue - spend) / spend) * 100 : 0
-  const margin = revenue > 0 ? (profit / revenue) * 100 : 0
+  // Quando há dados da Hotmart, o faturamento vem das vendas reais; caso
+  // contrário, faz fallback para as compras rastreadas pelo Meta.
+  const useCombined = Boolean(combined)
 
-  const has = Boolean(summary)
+  const spend = combined?.adSpend ?? summary?.spend ?? 0
+  const revenue = useCombined ? combined!.netRevenue : (summary?.revenue ?? 0)
+  const profit = useCombined ? combined!.profit : revenue - spend
+  const roas = useCombined ? combined!.roas : (summary?.roas ?? 0)
+  const cpa = useCombined ? combined!.cpa : (summary?.cpa ?? 0)
+  const purchases = useCombined ? combined!.approvedSales : (summary?.purchases ?? 0)
+  const arpu = useCombined ? combined!.ticket : purchases > 0 ? revenue / purchases : 0
+  const roi = useCombined ? combined!.roi : spend > 0 ? ((revenue - spend) / spend) * 100 : 0
+  const margin = useCombined ? combined!.margin : revenue > 0 ? (profit / revenue) * 100 : 0
+
+  const has = Boolean(summary) || useCombined
   const money = (v: number) => (has ? formatMoney(v) : formatMoney(0))
   const naDecimal = (v: number, suffix = "") => (has && v ? `${formatDecimal(v)}${suffix}` : "N/A")
   const naPercent = (v: number) => (has && v ? `${formatDecimal(v)}%` : "N/A")
@@ -191,24 +198,40 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
         >
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-[#E5E7EB]">Taxa de Aprovação</span>
-            <InfoIcon tip="Taxa de aprovação por método de pagamento (requer plataforma de vendas)" />
+            <InfoIcon tip="Taxa de aprovação por método de pagamento (vendas Hotmart)" />
           </div>
           <div className="mt-4 space-y-2.5">
-            {[
-              { method: "Cartão", value: "N/A" },
-              { method: "Pix", value: "N/A" },
-              { method: "Boleto", value: "N/A" },
-            ].map((row) => (
-              <div key={row.method} className="flex items-center justify-between">
-                <span className="text-sm text-white/80">{row.method}</span>
-                <div className="flex items-center gap-3 flex-1 mx-4">
-                  <div className="h-1.5 flex-1 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full w-0 bg-gradient-to-r from-electric-blue to-neon-purple rounded-full" />
+            {loading ? (
+              <>
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-full" />
+              </>
+            ) : approvalRows.length === 0 ? (
+              <p className="text-sm text-[#94A3B8]">Conecte a Hotmart para ver as taxas de aprovação.</p>
+            ) : (
+              approvalRows.map((row) => (
+                <div key={row.label} className="flex items-center justify-between">
+                  <span className="text-sm text-white/80 w-20">{row.label}</span>
+                  <div className="flex items-center gap-3 flex-1 mx-4">
+                    <div className="h-1.5 flex-1 rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-electric-blue to-neon-purple rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(row.rate, 100)}%` }}
+                      />
+                    </div>
                   </div>
+                  <span
+                    className={cn(
+                      "text-sm font-medium tabular-nums",
+                      row.rate >= 80 ? "text-[#00FF88]" : row.rate >= 50 ? "text-[#FFB020]" : "text-[#FF4444]",
+                    )}
+                  >
+                    {`${formatDecimal(row.rate)}%`}
+                  </span>
                 </div>
-                <span className={cn("text-sm font-medium", COLOR_NA)}>{row.value}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </motion.div>
 

@@ -52,3 +52,70 @@ export function useHotmartSales(datePreset = "last_30d", enabled = true) {
     mutate,
   }
 }
+
+export type ApprovalRate = { method: string; approved: number; total: number; rate: number }
+
+export type CombinedSummary = {
+  spend: number
+  revenue: number
+  profit: number
+  sales: number
+  roas: number
+  roi: number
+  cpa: number
+  averageTicket: number
+  margin: number
+  refunds: number
+  approvalRates: ApprovalRate[]
+}
+
+export type SummarySources = {
+  meta: { connected: boolean; error?: string }
+  hotmart: { connected: boolean; error?: string; hasData?: boolean }
+}
+
+/** Resumo combinado Meta (gastos) + Hotmart (faturamento/vendas). */
+export function useCombinedSummary(datePreset = "last_30d") {
+  const { data, error, isLoading, mutate } = useSWR<{ summary: CombinedSummary; sources: SummarySources }>(
+    `/api/summary?date_preset=${datePreset}`,
+    fetcher,
+    { revalidateOnFocus: false },
+  )
+  return {
+    summary: data?.summary,
+    sources: data?.sources,
+    error,
+    isLoading,
+    mutate,
+  }
+}
+
+export type DailyReportRow = {
+  date: string
+  sales: number
+  spend: number
+  revenue: number
+  profit: number
+  roas: number
+  roi: number
+  cpa: number
+  averageTicket: number
+  margin: number
+  refunds: number
+}
+
+/** Relatório diário combinado. */
+export function useDailyReport(datePreset = "last_7d") {
+  const { data, error, isLoading, mutate } = useSWR<{ rows: DailyReportRow[]; sources: SummarySources }>(
+    `/api/report/daily?date_preset=${datePreset}`,
+    fetcher,
+    { revalidateOnFocus: false },
+  )
+  return {
+    rows: data?.rows ?? [],
+    sources: data?.sources,
+    error,
+    isLoading,
+    mutate,
+  }
+}
