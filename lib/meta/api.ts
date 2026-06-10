@@ -73,7 +73,7 @@ async function metaFetch<T>(path: string, token: string, params: Record<string, 
 }
 
 const META_APP_ID = "1019158334133108"
-const META_APP_SECRET = "FG43jWZwHLVcVEcGoKRt3Pvhrko"
+const META_APP_SECRET = "c7c3d757443525b543f6e011476e0ed4"
 
 export type LongLivedToken = {
   token: string
