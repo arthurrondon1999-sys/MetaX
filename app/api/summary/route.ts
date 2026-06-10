@@ -9,6 +9,14 @@ import { presetToRange, presetToMetaDateSpec } from "@/lib/date-range"
  * Resumo combinado: gastos com anúncios (Meta) + faturamento e vendas reais (Hotmart).
  * Ambas as fontes operam em USD, então o cruzamento de ROAS/ROI/CPA é consistente.
  */
+
+// A busca da Hotmart pagina histórico + comissões (dezenas de chamadas
+// sequenciais). Em produção o timeout padrão da função é curto e abortava o
+// fluxo, zerando o faturamento. Damos margem suficiente e forçamos execução
+// dinâmica (sem cache de rota).
+export const maxDuration = 60
+export const dynamic = "force-dynamic"
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const datePreset = searchParams.get("date_preset") || "last_30d"
