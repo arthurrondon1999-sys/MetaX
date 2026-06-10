@@ -86,18 +86,27 @@ export type LongLivedToken = {
  * token de longa duração (~60 dias). Se a Meta não retornar `expires_in`
  * (caso de System User tokens), `expiresAt` volta como null.
  */
-export async function exchangeForLongLivedToken(shortLivedToken: string): Promise<LongLivedToken> {
-  console.log("[v0] exchange: token sendo enviado (curta duração):", shortLivedToken)
-  const data = await metaFetch<{ access_token: string; expires_in?: number; token_type?: string }>(
-    "oauth/access_token",
-    shortLivedToken,
-    {
-      grant_type: "fb_exchange_token",
-      client_id: META_APP_ID,
-      client_secret: META_APP_SECRET,
-    },
-  )
+export async function exchangeForLongLivedToken(token: string): Promise<LongLivedToken> {
+  console.log("[v0] exchange: token sendo enviado (curta duração):", token)
+
+  const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=1019158334133108&client_secret=c7c3d757443525b543f6e011476e0ed4&fb_exchange_token=${encodeURIComponent(token)}`
+
+  const res = await fetch(url, { cache: "no-store" })
+  const data = (await res.json()) as {
+    access_token?: string
+    expires_in?: number
+    token_type?: string
+    error?: { message?: string; code?: number }
+  }
   console.log("[v0] exchange: resposta completa do Facebook:", JSON.stringify(data))
+
+  if (!res.ok || data.error || !data.access_token) {
+    throw new MetaApiError(
+      data.error?.message || `Falha ao trocar pelo token de longa duração (${res.status})`,
+      res.status,
+      data.error?.code,
+    )
+  }
 
   const expiresAt =
     typeof data.expires_in === "number" && data.expires_in > 0
@@ -106,7 +115,7 @@ export async function exchangeForLongLivedToken(shortLivedToken: string): Promis
 
   console.log(
     "[v0] exchange: token de longa duração recebido?",
-    data.access_token !== shortLivedToken,
+    data.access_token !== token,
     "| expiresAt:",
     expiresAt,
   )
