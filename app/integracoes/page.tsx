@@ -10,14 +10,18 @@ import { SalesPlatformsSection } from "@/components/integracoes/sales-platforms-
 import { HowItWorksSection } from "@/components/integracoes/how-it-works-section"
 import { ConnectModal } from "@/components/integracoes/connect-modal"
 import { MetaConnectionModal } from "@/components/integracoes/meta-connection-modal"
+import { HotmartConnectionModal } from "@/components/integracoes/hotmart-connection-modal"
 import { useMetaStatus } from "@/hooks/use-meta"
+import { useHotmartStatus } from "@/hooks/use-hotmart"
 
 export default function IntegracoesPage() {
   // null = closed. No modal opens on page load.
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
   const [manageOpen, setManageOpen] = useState(false)
+  const [hotmartManageOpen, setHotmartManageOpen] = useState(false)
 
   const { status, isLoading, mutate } = useMetaStatus()
+  const { status: hotmartStatus, mutate: mutateHotmart } = useHotmartStatus()
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -38,7 +42,11 @@ export default function IntegracoesPage() {
           </motion.p>
 
           <AdPlatformsSection status={status} loading={isLoading} onManage={() => setManageOpen(true)} />
-          <SalesPlatformsSection onConnect={setConnectingPlatform} />
+          <SalesPlatformsSection
+            onConnect={setConnectingPlatform}
+            hotmartStatus={hotmartStatus}
+            onManageHotmart={() => setHotmartManageOpen(true)}
+          />
           <HowItWorksSection />
         </div>
       </main>
@@ -52,6 +60,14 @@ export default function IntegracoesPage() {
         onClose={() => setManageOpen(false)}
         status={status}
         onChanged={() => mutate()}
+      />
+
+      {/* Gerenciar conexão Hotmart (real) */}
+      <HotmartConnectionModal
+        open={hotmartManageOpen}
+        onClose={() => setHotmartManageOpen(false)}
+        status={hotmartStatus}
+        onChanged={() => mutateHotmart()}
       />
     </div>
   )
