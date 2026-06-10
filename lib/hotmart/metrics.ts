@@ -99,7 +99,8 @@ export function dailyHotmart(sales: HotmartSale[]): HotmartDailyRow[] {
 
   for (const s of sales) {
     if (!s.purchaseDate) continue
-    const date = s.purchaseDate.slice(0, 10)
+    // Agrupa pelo dia no fuso do Brasil (BRT) para bater com os filtros de data
+    const date = new Date(s.purchaseDate).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
     const row = map.get(date) ?? { date, sales: 0, revenue: 0, refunds: 0 }
     if (APPROVED_STATUSES.has(s.status)) {
       row.sales += 1
