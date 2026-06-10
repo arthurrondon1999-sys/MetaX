@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { MetricsGrid } from "@/components/dashboard/metrics-grid"
 import { DashboardBackground } from "@/components/dashboard/background"
-import { useMetaStatus, useMetaSummary } from "@/hooks/use-meta"
+import { useMetaStatus } from "@/hooks/use-meta"
+import { useCombinedSummary } from "@/hooks/use-hotmart"
 import { useAutoRefresh, formatCountdown, formatLastRefreshed } from "@/hooks/use-auto-refresh"
 
 const PERIOD_TO_PRESET: Record<string, string> = {
@@ -30,11 +31,11 @@ export default function DashboardPage() {
   const connected = Boolean(metaStatus?.connected && metaStatus?.tokenValid)
   const datePreset = PERIOD_TO_PRESET[periodo] || "last_30d"
 
-  const { summary, isLoading: summaryLoading, mutate } = useMetaSummary(datePreset, connected)
+  const { summary, sources, isLoading: summaryLoading, mutate } = useCombinedSummary(datePreset)
 
   const { secondsLeft, refreshing, lastRefreshed, refreshNow } = useAutoRefresh({
     onRefresh: () => mutate(),
-    enabled: connected,
+    enabled: true,
   })
 
   // Dispara o flash verde quando novos dados chegam
@@ -54,7 +55,7 @@ export default function DashboardPage() {
       <PageHeader
         title="Resumo"
         updatedLabel={formatLastRefreshed(lastRefreshed)}
-        countdownLabel={connected ? `Próxima atualização em ${formatCountdown(secondsLeft)}` : undefined}
+        countdownLabel={`Próxima atualização em ${formatCountdown(secondsLeft)}`}
         refreshing={refreshing}
         onRefresh={refreshNow}
       />
