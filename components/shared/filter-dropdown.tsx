@@ -27,7 +27,7 @@ export function FilterDropdown({ label, options, value, onChange }: FilterDropdo
 
   return (
     <div ref={ref} className="flex flex-col gap-1.5 min-w-[160px]">
-      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      <label className="text-xs font-medium text-white">{label}</label>
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white hover:border-electric-blue/40 transition-colors"

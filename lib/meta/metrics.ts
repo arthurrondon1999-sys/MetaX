@@ -78,3 +78,54 @@ const STATUS_LABELS: Record<string, string> = {
 export function statusLabel(status: string): string {
   return STATUS_LABELS[status] ?? status
 }
+
+/* ---------- Color coding ---------- */
+
+export const COLOR_POSITIVE = "text-[#00FF88]"
+export const COLOR_NEGATIVE = "text-[#FF4444]"
+export const COLOR_WARNING = "text-[#FFB020]"
+export const COLOR_NEUTRAL = "text-white"
+export const COLOR_NA = "text-[#94A3B8]"
+
+/** Valores tipo Faturamento, Lucro, ROI, ROAS: positivo = verde, <=0 = vermelho */
+export function positiveNegativeColor(value: number, hasData = true): string {
+  if (!hasData) return COLOR_NA
+  return value > 0 ? COLOR_POSITIVE : COLOR_NEGATIVE
+}
+
+/** ROI/percent em geral: >0 verde, <0 vermelho, 0 neutro/N/A */
+export function roiColor(value: number, hasData = true): string {
+  if (!hasData) return COLOR_NA
+  if (value > 0) return COLOR_POSITIVE
+  if (value < 0) return COLOR_NEGATIVE
+  return COLOR_NA
+}
+
+/** CPA: menor é melhor. <15 verde, 15-25 amarelo, >25 vermelho */
+export function cpaColor(value: number): string {
+  if (!value) return COLOR_NA
+  if (value < 15) return COLOR_POSITIVE
+  if (value <= 25) return COLOR_WARNING
+  return COLOR_NEGATIVE
+}
+
+/** ROAS: >3x verde, 1-3x amarelo, <1x vermelho */
+export function roasColor(value: number): string {
+  if (!value) return COLOR_NA
+  if (value > 3) return COLOR_POSITIVE
+  if (value >= 1) return COLOR_WARNING
+  return COLOR_NEGATIVE
+}
+
+/** CTR: >3% verde, 1-3% amarelo, <1% vermelho */
+export function ctrColor(value: number): string {
+  if (!value) return COLOR_NA
+  if (value > 3) return COLOR_POSITIVE
+  if (value >= 1) return COLOR_WARNING
+  return COLOR_NEGATIVE
+}
+
+/** VENDAS: >0 verde */
+export function salesColor(value: number): string {
+  return value > 0 ? COLOR_POSITIVE : COLOR_NA
+}

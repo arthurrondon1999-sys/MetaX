@@ -92,6 +92,7 @@ export default function DespesasPage() {
         title="Despesas"
         subtitle="Use essa tela para adicionar despesas personalizadas."
         updatedLabel=""
+        showCurrency={false}
         actions={
           <button
             onClick={() => setModalOpen(true)}
@@ -143,7 +144,7 @@ export default function DespesasPage() {
                     {COLUMNS.map((col) => (
                       <th
                         key={col}
-                        className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
+                        className="px-4 py-3 text-left text-xs font-semibold text-[#E5E7EB] whitespace-nowrap"
                       >
                         {col}
                       </th>
@@ -166,7 +167,7 @@ export default function DespesasPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-white">{d.descricao}</td>
-                      <td className="px-4 py-3 text-white font-medium whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium whitespace-nowrap text-[#FF4444]">
                         {formatBRL(Number(d.valor))}
                       </td>
                       <td className="px-4 py-3 relative">

@@ -146,7 +146,7 @@ export function Sidebar({ activePage = "dashboard" }: SidebarProps) {
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 group relative",
                     isActive
                       ? "bg-gradient-to-r from-electric-blue/20 to-neon-purple/20 text-white"
-                      : "text-muted-foreground hover:text-white hover:bg-white/5"
+                      : "text-[#E5E7EB] hover:text-white hover:bg-white/5"
                   )}
                 >
                   {/* Active indicator */}

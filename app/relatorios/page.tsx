@@ -63,6 +63,26 @@ export default function RelatoriosPage() {
 
   const visibleCols = ALL_COLUMNS.filter((c) => columns.includes(c))
 
+  const totalColor = (col: string): string => {
+    switch (col) {
+      case "DESPESAS":
+        return totalDespesas > 0 ? "text-[#FF4444]" : "text-[#94A3B8]"
+      case "GASTOS":
+        return "text-white"
+      case "FATURAMENTO":
+      case "LUCRO":
+      case "ROAS":
+      case "MARGEM":
+      case "ROI":
+      case "VENDAS":
+      case "APROVAÇÕES":
+      case "TICKET MÉDIO":
+        return "text-[#94A3B8]"
+      default:
+        return "text-white"
+    }
+  }
+
   const totalValue = (col: string): string => {
     switch (col) {
       case "DATA":
@@ -96,6 +116,7 @@ export default function RelatoriosPage() {
         title="Relatórios"
         subtitle="Use essa tela para visualizar relatórios diários."
         updatedLabel=""
+        showCurrency={false}
         actions={
           <button className="px-4 py-2 rounded-lg text-sm font-medium border border-white/15 text-white hover:bg-white/5 transition-colors">
             Exportar
@@ -166,7 +187,7 @@ export default function RelatoriosPage() {
                     {visibleCols.map((col) => (
                       <th
                         key={col}
-                        className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
+                        className="px-4 py-3 text-left text-xs font-semibold text-[#E5E7EB] whitespace-nowrap"
                       >
                         <span className="inline-flex items-center gap-1">
                           {col}
@@ -180,7 +201,7 @@ export default function RelatoriosPage() {
                   {/* Totals row */}
                   <tr className="border-b border-white/10 font-semibold">
                     {visibleCols.map((col) => (
-                      <td key={col} className="px-4 py-3 text-white whitespace-nowrap">
+                      <td key={col} className={`px-4 py-3 whitespace-nowrap ${totalColor(col)}`}>
                         {totalValue(col)}
                       </td>
                     ))}

@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
-import { Settings2, Upload, BarChart3, CheckCircle2, Search, Loader2, AlertTriangle, PlugZap } from "lucide-react"
+import { Settings2, Upload, BarChart3, CheckCircle2, Search, AlertTriangle, PlugZap } from "lucide-react"
 import Link from "next/link"
 import { Sidebar } from "@/components/shared/sidebar"
 import { PageHeader } from "@/components/shared/page-header"
@@ -10,16 +10,26 @@ import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { ColumnSelectorModal } from "@/components/shared/column-selector-modal"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { InfoIcon } from "@/components/shared/info-icon"
+import { Skeleton } from "@/components/shared/skeleton"
 import { useMetaStatus, useMetaCampaigns } from "@/hooks/use-meta"
+import { useAutoRefresh, formatCountdown, formatLastRefreshed } from "@/hooks/use-auto-refresh"
+import { useCurrency } from "@/lib/currency/currency-context"
 import {
   deriveCampaignMetrics,
-  formatCurrency,
   formatNumber,
   formatPercent,
   formatDecimal,
   statusLabel,
+  roiColor,
+  roasColor,
+  cpaColor,
+  ctrColor,
+  salesColor,
+  COLOR_NA,
+  COLOR_NEUTRAL,
   type CampaignMetrics,
 } from "@/lib/meta/metrics"
+import { cn } from "@/lib/utils"
 
 const TABS = ["Contas", "Campanhas", "Conjuntos", "Anúncios"]
 
@@ -74,42 +84,52 @@ const STATUS_FILTER_MAP: Record<string, string> = {
   Encerrada: "ARCHIVED",
 }
 
-function cellValue(col: string, m: CampaignMetrics): string {
+type Cell = { value: string; color: string }
+
+function cellData(col: string, m: CampaignMetrics, money: (v: number) => string): Cell {
   switch (col) {
     case "VEICULAÇÃO":
-      return statusLabel(m.status)
+      return { value: statusLabel(m.status), color: COLOR_NEUTRAL }
     case "ORÇAMENTO":
-      return "N/A"
+      return { value: "N/A", color: COLOR_NA }
     case "GASTOS":
-      return formatCurrency(m.spend)
+      return { value: money(m.spend), color: COLOR_NEUTRAL }
     case "VENDAS":
-      return formatNumber(m.purchases)
-    case "ROI":
-      return m.spend > 0 ? formatPercent(((m.revenue - m.spend) / m.spend) * 100) : "N/A"
+      return { value: formatNumber(m.purchases), color: salesColor(m.purchases) }
+    case "ROI": {
+      const roi = m.spend > 0 ? ((m.revenue - m.spend) / m.spend) * 100 : 0
+      return m.spend > 0
+        ? { value: formatPercent(roi), color: roiColor(roi) }
+        : { value: "N/A", color: COLOR_NA }
+    }
     case "CPA":
-      return m.cpa > 0 ? formatCurrency(m.cpa) : "N/A"
+      return m.cpa > 0 ? { value: money(m.cpa), color: cpaColor(m.cpa) } : { value: "N/A", color: COLOR_NA }
     case "ROAS":
-      return m.roas > 0 ? `${formatDecimal(m.roas)}x` : "N/A"
+      return m.roas > 0
+        ? { value: `${formatDecimal(m.roas)}x`, color: roasColor(m.roas) }
+        : { value: "N/A", color: COLOR_NA }
     case "IMPRESSÕES":
-      return formatNumber(m.impressions)
+      return { value: formatNumber(m.impressions), color: COLOR_NEUTRAL }
     case "CPM":
-      return formatCurrency(m.cpm)
+      return { value: money(m.cpm), color: COLOR_NEUTRAL }
     case "CTR":
-      return m.ctr > 0 ? formatPercent(m.ctr) : "N/A"
+      return m.ctr > 0 ? { value: formatPercent(m.ctr), color: ctrColor(m.ctr) } : { value: "N/A", color: COLOR_NA }
     case "CPC":
-      return m.cpc > 0 ? formatCurrency(m.cpc) : "N/A"
+      return m.cpc > 0 ? { value: money(m.cpc), color: COLOR_NEUTRAL } : { value: "N/A", color: COLOR_NA }
     case "FREQUÊNCIA":
-      return m.impressions > 0 ? formatDecimal(m.impressions / Math.max(m.reach, 1)) : "N/A"
+      return m.impressions > 0
+        ? { value: formatDecimal(m.impressions / Math.max(m.reach, 1)), color: COLOR_NEUTRAL }
+        : { value: "N/A", color: COLOR_NA }
     case "ALCANCE":
-      return formatNumber(m.reach)
+      return { value: formatNumber(m.reach), color: COLOR_NEUTRAL }
     case "CLIQUES":
-      return formatNumber(m.clicks)
+      return { value: formatNumber(m.clicks), color: COLOR_NEUTRAL }
     case "CONVERSÕES":
-      return formatNumber(m.purchases)
+      return { value: formatNumber(m.purchases), color: salesColor(m.purchases) }
     case "CUSTO POR CONVERSÃO":
-      return m.cpa > 0 ? formatCurrency(m.cpa) : "N/A"
+      return m.cpa > 0 ? { value: money(m.cpa), color: cpaColor(m.cpa) } : { value: "N/A", color: COLOR_NA }
     default:
-      return "N/A"
+      return { value: "N/A", color: COLOR_NA }
   }
 }
 
@@ -123,6 +143,7 @@ export default function MetaAdsPage() {
   const [conta, setConta] = useState("Qualquer")
   const [produto, setProduto] = useState("Qualquer")
 
+  const { formatMoney } = useCurrency()
   const { status: metaStatus, isLoading: statusLoading } = useMetaStatus()
   const connected = metaStatus?.connected && metaStatus?.tokenValid
   const datePreset = PERIOD_TO_PRESET[periodo] || "last_30d"
@@ -133,6 +154,11 @@ export default function MetaAdsPage() {
     error: campaignsError,
     mutate,
   } = useMetaCampaigns(datePreset, Boolean(connected))
+
+  const { secondsLeft, refreshing, lastRefreshed, refreshNow } = useAutoRefresh({
+    onRefresh: () => mutate(),
+    enabled: Boolean(connected),
+  })
 
   const visibleCols = ALL_COLUMNS.filter((c) => columns.includes(c))
 
@@ -162,44 +188,71 @@ export default function MetaAdsPage() {
     )
   }, [metrics])
 
-  function totalCell(col: string): string {
+  function totalCell(col: string): Cell {
     switch (col) {
       case "CAMPANHA":
-        return `${metrics.length} CAMPANHAS`
+        return { value: `${metrics.length} CAMPANHAS`, color: COLOR_NEUTRAL }
       case "GASTOS":
-        return formatCurrency(totals.spend)
+        return { value: formatMoney(totals.spend), color: COLOR_NEUTRAL }
       case "VENDAS":
-        return formatNumber(totals.purchases)
-      case "ROI":
-        return totals.spend > 0 ? formatPercent(((totals.revenue - totals.spend) / totals.spend) * 100) : "N/A"
-      case "CPA":
-        return totals.purchases > 0 ? formatCurrency(totals.spend / totals.purchases) : "N/A"
-      case "ROAS":
-        return totals.spend > 0 ? `${formatDecimal(totals.revenue / totals.spend)}x` : "N/A"
+        return { value: formatNumber(totals.purchases), color: salesColor(totals.purchases) }
+      case "ROI": {
+        const roi = totals.spend > 0 ? ((totals.revenue - totals.spend) / totals.spend) * 100 : 0
+        return totals.spend > 0 ? { value: formatPercent(roi), color: roiColor(roi) } : { value: "N/A", color: COLOR_NA }
+      }
+      case "CPA": {
+        const cpa = totals.purchases > 0 ? totals.spend / totals.purchases : 0
+        return cpa > 0 ? { value: formatMoney(cpa), color: cpaColor(cpa) } : { value: "N/A", color: COLOR_NA }
+      }
+      case "ROAS": {
+        const roas = totals.spend > 0 ? totals.revenue / totals.spend : 0
+        return roas > 0 ? { value: `${formatDecimal(roas)}x`, color: roasColor(roas) } : { value: "N/A", color: COLOR_NA }
+      }
       case "IMPRESSÕES":
-        return formatNumber(totals.impressions)
+        return { value: formatNumber(totals.impressions), color: COLOR_NEUTRAL }
       case "CPM":
-        return totals.impressions > 0 ? formatCurrency((totals.spend / totals.impressions) * 1000) : "R$ 0,00"
-      case "CTR":
-        return totals.impressions > 0 ? formatPercent((totals.clicks / totals.impressions) * 100) : "N/A"
+        return {
+          value: totals.impressions > 0 ? formatMoney((totals.spend / totals.impressions) * 1000) : formatMoney(0),
+          color: COLOR_NEUTRAL,
+        }
+      case "CTR": {
+        const ctr = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0
+        return ctr > 0 ? { value: formatPercent(ctr), color: ctrColor(ctr) } : { value: "N/A", color: COLOR_NA }
+      }
       case "CPC":
-        return totals.clicks > 0 ? formatCurrency(totals.spend / totals.clicks) : "N/A"
+        return totals.clicks > 0
+          ? { value: formatMoney(totals.spend / totals.clicks), color: COLOR_NEUTRAL }
+          : { value: "N/A", color: COLOR_NA }
       case "FREQUÊNCIA":
-        return totals.reach > 0 ? formatDecimal(totals.impressions / totals.reach) : "N/A"
+        return totals.reach > 0
+          ? { value: formatDecimal(totals.impressions / totals.reach), color: COLOR_NEUTRAL }
+          : { value: "N/A", color: COLOR_NA }
       case "ALCANCE":
-        return formatNumber(totals.reach)
+        return { value: formatNumber(totals.reach), color: COLOR_NEUTRAL }
       case "CLIQUES":
-        return formatNumber(totals.clicks)
+        return { value: formatNumber(totals.clicks), color: COLOR_NEUTRAL }
       case "CONVERSÕES":
-        return formatNumber(totals.purchases)
-      case "CUSTO POR CONVERSÃO":
-        return totals.purchases > 0 ? formatCurrency(totals.spend / totals.purchases) : "N/A"
+        return { value: formatNumber(totals.purchases), color: salesColor(totals.purchases) }
+      case "CUSTO POR CONVERSÃO": {
+        const cpa = totals.purchases > 0 ? totals.spend / totals.purchases : 0
+        return cpa > 0 ? { value: formatMoney(cpa), color: cpaColor(cpa) } : { value: "N/A", color: COLOR_NA }
+      }
       default:
-        return "N/A"
+        return { value: "N/A", color: COLOR_NA }
     }
   }
 
   const loading = statusLoading || (connected && campaignsLoading)
+
+  // Flash verde ao atualizar dados
+  const [flash, setFlash] = useState(false)
+  useEffect(() => {
+    if (connected && rawCampaigns.length) {
+      setFlash(true)
+      const id = setTimeout(() => setFlash(false), 1300)
+      return () => clearTimeout(id)
+    }
+  }, [lastRefreshed, connected, rawCampaigns.length])
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -212,12 +265,10 @@ export default function MetaAdsPage() {
             f
           </span>
         }
-        updatedLabel={
-          metaStatus?.updatedAt
-            ? `Atualizado ${new Date(metaStatus.updatedAt).toLocaleDateString("pt-BR")}`
-            : "Atualizado agora mesmo"
-        }
-        onRefresh={() => mutate()}
+        updatedLabel={formatLastRefreshed(lastRefreshed)}
+        countdownLabel={connected ? `Próxima atualização em ${formatCountdown(secondsLeft)}` : undefined}
+        refreshing={refreshing}
+        onRefresh={refreshNow}
       />
 
       <main className="ml-60 pt-20">
@@ -250,19 +301,19 @@ export default function MetaAdsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setColumnsOpen(true)}
-              className="p-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:border-electric-blue/40 transition-colors"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-[#94A3B8] hover:text-white hover:border-electric-blue/40 transition-colors"
               title="Personalizar colunas"
             >
               <Settings2 className="w-4 h-4" />
             </button>
             <button
-              className="p-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:border-electric-blue/40 transition-colors"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-[#94A3B8] hover:text-white hover:border-electric-blue/40 transition-colors"
               title="Exportar"
             >
               <Upload className="w-4 h-4" />
             </button>
             <button
-              className="p-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:border-electric-blue/40 transition-colors"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-[#94A3B8] hover:text-white hover:border-electric-blue/40 transition-colors"
               title="Métricas"
             >
               <BarChart3 className="w-4 h-4" />
@@ -278,14 +329,14 @@ export default function MetaAdsPage() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <div className="flex flex-col gap-1.5 min-w-[200px]">
-              <label className="text-xs font-medium text-muted-foreground">Nome da Campanha</label>
+              <label className="text-xs font-medium text-white">Nome da Campanha</label>
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus-within:border-electric-blue/40 transition-colors">
-                <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
                 <input
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Filtrar por nome"
-                  className="bg-transparent text-sm text-white placeholder:text-muted-foreground outline-none w-full"
+                  className="bg-transparent text-sm text-white placeholder:text-[#94A3B8] outline-none w-full"
                 />
               </div>
             </div>
@@ -319,7 +370,7 @@ export default function MetaAdsPage() {
               <h3 className="text-base font-semibold text-white mb-1">
                 {metaStatus?.connected ? "Token do Meta expirado ou inválido" : "Conta do Meta não conectada"}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-[#94A3B8] mb-4">
                 {metaStatus?.error || "Conecte sua conta do Meta Ads para visualizar suas campanhas."}
               </p>
               <Link
@@ -344,7 +395,7 @@ export default function MetaAdsPage() {
                       {visibleCols.map((col) => (
                         <th
                           key={col}
-                          className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"
+                          className="px-4 py-3 text-left text-xs font-semibold text-[#E5E7EB] whitespace-nowrap"
                         >
                           <span className="inline-flex items-center gap-1">
                             {col}
@@ -356,18 +407,45 @@ export default function MetaAdsPage() {
                   </thead>
                   <tbody>
                     {/* Totals row */}
-                    <tr className="border-b border-white/10 font-semibold bg-white/[0.02]">
-                      <td className="px-4 py-3" />
-                      {visibleCols.map((col) => (
-                        <td key={col} className="px-4 py-3 text-white whitespace-nowrap">
-                          {totalCell(col)}
-                        </td>
+                    {!loading && (
+                      <tr className="border-b border-white/10 font-semibold bg-white/[0.02]">
+                        <td className="px-4 py-3" />
+                        {visibleCols.map((col) => {
+                          const cell = totalCell(col)
+                          return (
+                            <td key={col} className={cn("px-4 py-3 whitespace-nowrap", cell.color)}>
+                              {cell.value}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )}
+
+                    {/* Skeleton rows while loading */}
+                    {loading &&
+                      Array.from({ length: 6 }).map((_, i) => (
+                        <tr key={`sk-${i}`} className="border-b border-white/5">
+                          <td className="px-4 py-3">
+                            <Skeleton className="h-4 w-4" />
+                          </td>
+                          {visibleCols.map((col) => (
+                            <td key={col} className="px-4 py-3">
+                              <Skeleton className="h-4 w-20" />
+                            </td>
+                          ))}
+                        </tr>
                       ))}
-                    </tr>
+
                     {/* Campaign rows */}
                     {!loading &&
                       metrics.map((m) => (
-                        <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <tr
+                          key={m.id}
+                          className={cn(
+                            "border-b border-white/5 hover:bg-white/[0.02] transition-colors",
+                            flash && "animate-data-flash",
+                          )}
+                        >
                           <td className="px-4 py-3">
                             <input type="checkbox" className="accent-electric-blue" />
                           </td>
@@ -380,11 +458,11 @@ export default function MetaAdsPage() {
                                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs ${
                                       active
                                         ? "bg-emerald-500/15 text-emerald-400"
-                                        : "bg-white/10 text-muted-foreground"
+                                        : "bg-white/10 text-[#94A3B8]"
                                     }`}
                                   >
                                     <span
-                                      className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-400" : "bg-muted-foreground"}`}
+                                      className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-400" : "bg-[#94A3B8]"}`}
                                     />
                                     {statusLabel(m.status)}
                                   </span>
@@ -398,9 +476,10 @@ export default function MetaAdsPage() {
                                 </td>
                               )
                             }
+                            const cell = cellData(col, m, formatMoney)
                             return (
-                              <td key={col} className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                                {cellValue(col, m)}
+                              <td key={col} className={cn("px-4 py-3 whitespace-nowrap", cell.color)}>
+                                {cell.value}
                               </td>
                             )
                           })}
@@ -409,14 +488,6 @@ export default function MetaAdsPage() {
                   </tbody>
                 </table>
               </div>
-
-              {/* Loading */}
-              {loading && (
-                <div className="px-4 py-12 text-center">
-                  <Loader2 className="w-6 h-6 text-electric-blue animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Carregando campanhas...</p>
-                </div>
-              )}
 
               {/* Error */}
               {!loading && campaignsError && (
@@ -429,7 +500,7 @@ export default function MetaAdsPage() {
               {/* Empty */}
               {!loading && !campaignsError && metrics.length === 0 && (
                 <div className="px-4 py-10 text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Nenhuma campanha encontrada para este período.</p>
+                  <p className="text-sm text-[#94A3B8] mb-1">Nenhuma campanha encontrada para este período.</p>
                   <button className="inline-flex items-center gap-1.5 text-sm text-cyan hover:underline">
                     Por que as campanhas não estão aparecendo?
                     <InfoIcon />

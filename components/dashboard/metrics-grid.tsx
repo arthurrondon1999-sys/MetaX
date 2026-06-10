@@ -1,10 +1,19 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
 import { InfoIcon } from "@/components/shared/info-icon"
+import { Skeleton } from "@/components/shared/skeleton"
 import { cn } from "@/lib/utils"
-import { formatCurrency, formatDecimal } from "@/lib/meta/metrics"
+import { useCurrency } from "@/lib/currency/currency-context"
+import {
+  formatDecimal,
+  positiveNegativeColor,
+  roiColor,
+  roasColor,
+  cpaColor,
+  COLOR_NA,
+  COLOR_NEUTRAL,
+} from "@/lib/meta/metrics"
 
 export interface MetaSummary {
   spend: number
@@ -30,9 +39,10 @@ interface MetricCardProps {
   delay?: number
   accent?: string
   loading?: boolean
+  flash?: boolean
 }
 
-function MetricCard({ label, value, tip, className, delay = 0, accent, loading }: MetricCardProps) {
+function MetricCard({ label, value, tip, className, delay = 0, accent, loading, flash }: MetricCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -40,22 +50,22 @@ function MetricCard({ label, value, tip, className, delay = 0, accent, loading }
       transition={{ duration: 0.4, delay }}
       className={cn(
         "group relative rounded-xl bg-white/[0.03] border border-white/10 p-5 overflow-hidden hover:border-electric-blue/30 transition-all duration-300",
+        flash && !loading && "animate-data-flash",
         className,
       )}
     >
-      {/* hover glow */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{ background: "radial-gradient(circle at 50% 0%, rgba(0,102,255,0.08), transparent 70%)" }}
       />
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-[#E5E7EB]">{label}</span>
         <InfoIcon tip={tip} />
       </div>
       {loading ? (
-        <Loader2 className="mt-3 w-5 h-5 text-muted-foreground animate-spin" />
+        <Skeleton className="mt-3 h-7 w-3/4" />
       ) : (
-        <p className={cn("mt-3 text-2xl font-bold tracking-tight", accent ?? "text-white")}>{value}</p>
+        <p className={cn("mt-3 text-2xl font-bold tracking-tight", accent ?? COLOR_NEUTRAL)}>{value}</p>
       )}
     </motion.div>
   )
@@ -64,10 +74,13 @@ function MetricCard({ label, value, tip, className, delay = 0, accent, loading }
 interface MetricsGridProps {
   summary?: MetaSummary | null
   loading?: boolean
+  /** Dispara o flash verde nos cards quando os dados são atualizados */
+  flash?: boolean
 }
 
-export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
-  // Receita/vendas vêm das ações de compra rastreadas pelo Meta.
+export function MetricsGrid({ summary, loading = false, flash = false }: MetricsGridProps) {
+  const { formatMoney } = useCurrency()
+
   const revenue = summary?.revenue ?? 0
   const spend = summary?.spend ?? 0
   const profit = revenue - spend
@@ -79,7 +92,7 @@ export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
   const has = Boolean(summary)
-  const money = (v: number) => (has ? formatCurrency(v) : "R$ 0,00")
+  const money = (v: number) => (has ? formatMoney(v) : formatMoney(0))
   const naDecimal = (v: number, suffix = "") => (has && v ? `${formatDecimal(v)}${suffix}` : "N/A")
   const naPercent = (v: number) => (has && v ? `${formatDecimal(v)}%` : "N/A")
 
@@ -87,23 +100,87 @@ export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
     <div className="space-y-4">
       {/* Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Faturamento Líquido" value={money(revenue)} tip="Receita de compras rastreadas pelo Meta" delay={0} loading={loading} />
-        <MetricCard label="Gastos com Anúncios" value={money(spend)} tip="Total gasto em anúncios no Meta" delay={0.05} loading={loading} />
-        <MetricCard label="Lucro" value={money(profit)} tip="Receita menos gastos com anúncios" delay={0.1} accent={profit >= 0 ? "text-emerald-400" : "text-red-400"} loading={loading} />
-        <MetricCard label="ROAS" value={naDecimal(roas, "x")} tip="Return on Ad Spend" delay={0.15} accent="text-cyan" loading={loading} />
+        <MetricCard
+          label="Faturamento Líquido"
+          value={money(revenue)}
+          tip="Receita de compras rastreadas pelo Meta"
+          delay={0}
+          accent={positiveNegativeColor(revenue, has)}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="Gastos com Anúncios"
+          value={money(spend)}
+          tip="Total gasto em anúncios no Meta"
+          delay={0.05}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="Lucro"
+          value={money(profit)}
+          tip="Receita menos gastos com anúncios"
+          delay={0.1}
+          accent={positiveNegativeColor(profit, has)}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="ROAS"
+          value={naDecimal(roas, "x")}
+          tip="Return on Ad Spend"
+          delay={0.15}
+          accent={has && roas ? roasColor(roas) : COLOR_NA}
+          loading={loading}
+          flash={flash}
+        />
       </div>
 
       {/* Row 2 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Faturamento Bruto" value={money(revenue)} tip="Receita bruta de compras rastreadas" delay={0.2} loading={loading} />
-        <MetricCard label="ARPU" value={money(arpu)} tip="Receita média por venda" delay={0.25} loading={loading} />
-        <MetricCard label="Vendas" value={has ? String(purchases) : "0"} tip="Total de compras rastreadas" delay={0.3} loading={loading} />
-        <MetricCard label="ROI" value={naPercent(roi)} tip="Return on Investment" delay={0.35} accent="text-cyan" loading={loading} />
+        <MetricCard
+          label="Faturamento Bruto"
+          value={money(revenue)}
+          tip="Receita bruta de compras rastreadas"
+          delay={0.2}
+          accent={positiveNegativeColor(revenue, has)}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard label="ARPU" value={money(arpu)} tip="Receita média por venda" delay={0.25} loading={loading} flash={flash} />
+        <MetricCard
+          label="Vendas"
+          value={has ? String(purchases) : "0"}
+          tip="Total de compras rastreadas"
+          delay={0.3}
+          accent={positiveNegativeColor(purchases, has)}
+          loading={loading}
+          flash={flash}
+        />
+        <MetricCard
+          label="ROI"
+          value={naPercent(roi)}
+          tip="Return on Investment"
+          delay={0.35}
+          accent={has && roi ? roiColor(roi) : COLOR_NA}
+          loading={loading}
+          flash={flash}
+        />
       </div>
 
       {/* Row 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <MetricCard label="CPA" value={has && cpa ? money(cpa) : "R$ 0,00"} tip="Custo por aquisição" delay={0.4} className="lg:col-span-1" loading={loading} />
+        <MetricCard
+          label="CPA"
+          value={has && cpa ? money(cpa) : money(0)}
+          tip="Custo por aquisição"
+          delay={0.4}
+          className="lg:col-span-1"
+          accent={has && cpa ? cpaColor(cpa) : COLOR_NA}
+          loading={loading}
+          flash={flash}
+        />
 
         {/* Taxa de Aprovação (large) — depende de plataforma de vendas, não integrada */}
         <motion.div
@@ -113,7 +190,7 @@ export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
           className="group relative rounded-xl bg-white/[0.03] border border-white/10 p-5 overflow-hidden hover:border-electric-blue/30 transition-all duration-300 lg:col-span-2"
         >
           <div className="flex items-start justify-between gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Taxa de Aprovação</span>
+            <span className="text-xs font-medium text-[#E5E7EB]">Taxa de Aprovação</span>
             <InfoIcon tip="Taxa de aprovação por método de pagamento (requer plataforma de vendas)" />
           </div>
           <div className="mt-4 space-y-2.5">
@@ -123,19 +200,28 @@ export function MetricsGrid({ summary, loading = false }: MetricsGridProps) {
               { method: "Boleto", value: "N/A" },
             ].map((row) => (
               <div key={row.method} className="flex items-center justify-between">
-                <span className="text-sm text-white/70">{row.method}</span>
+                <span className="text-sm text-white/80">{row.method}</span>
                 <div className="flex items-center gap-3 flex-1 mx-4">
                   <div className="h-1.5 flex-1 rounded-full bg-white/5 overflow-hidden">
                     <div className="h-full w-0 bg-gradient-to-r from-electric-blue to-neon-purple rounded-full" />
                   </div>
                 </div>
-                <span className="text-sm font-medium text-white">{row.value}</span>
+                <span className={cn("text-sm font-medium", COLOR_NA)}>{row.value}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        <MetricCard label="Margem" value={naPercent(margin)} tip="Margem de lucro" delay={0.5} className="lg:col-span-1" accent="text-cyan" loading={loading} />
+        <MetricCard
+          label="Margem"
+          value={naPercent(margin)}
+          tip="Margem de lucro"
+          delay={0.5}
+          className="lg:col-span-1"
+          accent={has && margin ? roiColor(margin) : COLOR_NA}
+          loading={loading}
+          flash={flash}
+        />
       </div>
     </div>
   )

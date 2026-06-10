@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { PlugZap } from "lucide-react"
 import { Sidebar } from "@/components/shared/sidebar"
@@ -9,6 +9,7 @@ import { FilterDropdown } from "@/components/shared/filter-dropdown"
 import { MetricsGrid } from "@/components/dashboard/metrics-grid"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { useMetaStatus, useMetaSummary } from "@/hooks/use-meta"
+import { useAutoRefresh, formatCountdown, formatLastRefreshed } from "@/hooks/use-auto-refresh"
 
 const PERIOD_TO_PRESET: Record<string, string> = {
   Hoje: "today",
@@ -31,11 +32,32 @@ export default function DashboardPage() {
 
   const { summary, isLoading: summaryLoading, mutate } = useMetaSummary(datePreset, connected)
 
+  const { secondsLeft, refreshing, lastRefreshed, refreshNow } = useAutoRefresh({
+    onRefresh: () => mutate(),
+    enabled: connected,
+  })
+
+  // Dispara o flash verde quando novos dados chegam
+  const [flash, setFlash] = useState(false)
+  useEffect(() => {
+    if (summary) {
+      setFlash(true)
+      const id = setTimeout(() => setFlash(false), 1300)
+      return () => clearTimeout(id)
+    }
+  }, [lastRefreshed, summary])
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DashboardBackground />
       <Sidebar activePage="dashboard" />
-      <PageHeader title="Resumo" updatedLabel="Atualizado agora mesmo" onRefresh={() => mutate()} />
+      <PageHeader
+        title="Resumo"
+        updatedLabel={formatLastRefreshed(lastRefreshed)}
+        countdownLabel={connected ? `Próxima atualização em ${formatCountdown(secondsLeft)}` : undefined}
+        refreshing={refreshing}
+        onRefresh={refreshNow}
+      />
 
       <main className="ml-60 pt-20">
         <div className="p-6 space-y-6 max-w-7xl">
@@ -84,7 +106,7 @@ export default function DashboardPage() {
           )}
 
           {/* Metrics */}
-          <MetricsGrid summary={summary} loading={statusLoading || (connected && summaryLoading)} />
+          <MetricsGrid summary={summary} loading={statusLoading || (connected && summaryLoading)} flash={flash} />
         </div>
       </main>
     </div>
