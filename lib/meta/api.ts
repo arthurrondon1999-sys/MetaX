@@ -156,10 +156,15 @@ export async function getCampaigns(
     limit: "200",
   })
   // insights vem como { data: [insight] } — normalizamos para objeto único
-  return (data.data ?? []).map((c) => {
+  const campaigns = (data.data ?? []).map((c) => {
     const raw = c.insights as unknown as { data?: MetaInsight[] } | undefined
     return { ...c, insights: raw?.data?.[0] }
   })
+  console.log(
+    "[v0] Campaign spend breakdown:",
+    campaigns.map((c) => ({ name: c.name, spend: c.insights?.spend || 0 })),
+  )
+  return campaigns
 }
 
 /** Soma duas listas de actions (action_type -> value) acumulando valores. */
