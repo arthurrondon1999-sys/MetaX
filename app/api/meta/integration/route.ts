@@ -26,12 +26,24 @@ export async function POST(request: Request) {
     try {
       // 1) Troca o token de curta duração por um de longa duração (~60 dias)
       const exchanged = await exchangeForLongLivedToken(accessToken)
+      console.log("[v0] Meta long-lived token exchange success:", JSON.stringify(exchanged))
       longLivedToken = exchanged.token
       expiresAt = exchanged.expiresAt
     } catch (error) {
-      // Se a troca falhar (ex.: token já inválido), usa o token original
-      // e deixa a validação abaixo retornar o erro adequado.
-      longLivedToken = accessToken
+      // A troca falhou: logamos a resposta completa do Facebook e retornamos
+      // o erro ao frontend em vez de salvar o token de curta duração.
+      const detail =
+        error instanceof MetaApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : String(error)
+      console.log("[v0] Meta long-lived token exchange FAILED:", JSON.stringify(error, Object.getOwnPropertyNames(error ?? {})))
+      console.log("[v0] Meta long-lived token exchange error detail:", detail)
+      return NextResponse.json(
+        { error: `Falha ao trocar pelo token de longa duração: ${detail}` },
+        { status: 400 },
+      )
     }
 
     try {
