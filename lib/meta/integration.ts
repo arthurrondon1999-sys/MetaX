@@ -35,3 +35,20 @@ export async function getMetaIntegration(): Promise<
   if (!data) return null
   return { token: data.access_token, accountId: data.account_id, updatedAt: data.updated_at }
 }
+
+export async function getHotmartIntegration(): Promise<
+  { basicCredential: string; clientId: string | null; updatedAt: string } | null
+> {
+  const { supabase, user } = await getAuthedUser()
+  if (!user) return null
+
+  const { data } = await supabase
+    .from("integrations")
+    .select("access_token, account_id, updated_at")
+    .eq("user_id", user.id)
+    .eq("platform", "hotmart")
+    .maybeSingle()
+
+  if (!data) return null
+  return { basicCredential: data.access_token, clientId: data.account_id, updatedAt: data.updated_at }
+}
