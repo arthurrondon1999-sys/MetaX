@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { PlugZap } from "lucide-react"
+import { format } from "date-fns"
 import { Sidebar } from "@/components/shared/sidebar"
 import { PageHeader } from "@/components/shared/page-header"
 import { FilterDropdown } from "@/components/shared/filter-dropdown"
+import { DateRangePicker, type DateRange } from "@/components/shared/date-range-picker"
 import { MetricsGrid } from "@/components/dashboard/metrics-grid"
 import { DashboardBackground } from "@/components/dashboard/background"
 import { useCombinedSummary } from "@/hooks/use-hotmart"
@@ -13,20 +15,30 @@ import { useAutoRefresh, formatCountdown, formatLastRefreshed } from "@/hooks/us
 
 const PERIOD_TO_PRESET: Record<string, string> = {
   Hoje: "today",
-  "Essa semana": "this_week_mon_today",
-  "Esse mês": "this_month",
+  Ontem: "yesterday",
   "Últimos 7 dias": "last_7d",
   "Últimos 30 dias": "last_30d",
+  "Este mês": "this_month",
 }
+
+const PERIOD_OPTIONS = ["Hoje", "Ontem", "Últimos 7 dias", "Últimos 30 dias", "Este mês", "Personalizado"]
 
 export default function DashboardPage() {
   const [periodo, setPeriodo] = useState("Últimos 30 dias")
-  const [conta, setConta] = useState("Qualquer")
-  const [fonte, setFonte] = useState("Qualquer")
   const [plataforma, setPlataforma] = useState("Qualquer")
   const [produto, setProduto] = useState("Qualquer")
+  const [customRange, setCustomRange] = useState<DateRange | undefined>()
 
-  const datePreset = PERIOD_TO_PRESET[periodo] || "last_30d"
+  // Monta o date_preset: presets nativos ou "custom:YYYY-MM-DD:YYYY-MM-DD"
+  const datePreset = useMemo(() => {
+    if (periodo === "Personalizado") {
+      if (customRange?.from && customRange?.to) {
+        return `custom:${format(customRange.from, "yyyy-MM-dd")}:${format(customRange.to, "yyyy-MM-dd")}`
+      }
+      return "last_30d"
+    }
+    return PERIOD_TO_PRESET[periodo] || "last_30d"
+  }, [periodo, customRange])
 
   const { summary, sources, isLoading: summaryLoading, mutate } = useCombinedSummary(datePreset)
 
@@ -60,25 +72,16 @@ export default function DashboardPage() {
       <main className="ml-60 pt-20">
         <div className="p-6 space-y-6 max-w-7xl">
           {/* Filters */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <FilterDropdown
               label="Período de Visualização"
               value={periodo}
               onChange={setPeriodo}
-              options={["Hoje", "Essa semana", "Esse mês", "Últimos 7 dias", "Últimos 30 dias"]}
+              options={PERIOD_OPTIONS}
             />
-            <FilterDropdown
-              label="Conta de Anúncio"
-              value={conta}
-              onChange={setConta}
-              options={["Qualquer", "Conta principal", "Conta secundária"]}
-            />
-            <FilterDropdown
-              label="Fonte de Tráfego"
-              value={fonte}
-              onChange={setFonte}
-              options={["Qualquer", "Meta Ads", "Google Ads", "TikTok Ads"]}
-            />
+            {periodo === "Personalizado" && (
+              <DateRangePicker range={customRange} onChange={setCustomRange} />
+            )}
             <FilterDropdown
               label="Plataforma"
               value={plataforma}
@@ -87,13 +90,6 @@ export default function DashboardPage() {
             />
             <FilterDropdown label="Produto" value={produto} onChange={setProduto} options={["Qualquer"]} />
           </div>
-
-          {/* Debug temporário: valores brutos recebidos do /api/summary */}
-          <p className="text-xs text-muted-foreground font-mono">
-            {summaryLoading
-              ? "Debug: carregando…"
-              : `Debug: hotmart_revenue=${summary?.revenue ?? "undefined"}, hotmart_sales=${summary?.sales ?? "undefined"}, meta_spend=${summary?.spend ?? "undefined"}`}
-          </p>
 
           {/* Connection banner */}
           {sources && (!sources.meta.connected || !sources.hotmart.connected) && (

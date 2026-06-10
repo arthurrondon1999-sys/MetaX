@@ -25,6 +25,15 @@ export function presetToRange(preset: string): { start: number; end: number } {
   const now = new Date()
   const end = now.getTime()
 
+  // Intervalo customizado: "custom:YYYY-MM-DD:YYYY-MM-DD"
+  if (preset.startsWith("custom:")) {
+    const [, since, until] = preset.split(":")
+    if (since && until) {
+      // until inclui o dia inteiro -> até o fim do dia (próxima meia-noite)
+      return { start: brtMidnight(since), end: brtMidnight(until) + DAY_MS }
+    }
+  }
+
   // Meia-noite de hoje no fuso do Brasil
   const todayStr = brtDateString(now)
   const startOfToday = brtMidnight(todayStr)
@@ -70,4 +79,17 @@ export function presetToRange(preset: string): { start: number; end: number } {
     default:
       return { start: daysAgo(30), end }
   }
+}
+
+/**
+ * Converte o parâmetro `date_preset` recebido na query em um DateSpec aceito
+ * pela Meta Graph API: um preset nativo (string) ou `{ since, until }` quando
+ * for um intervalo customizado ("custom:YYYY-MM-DD:YYYY-MM-DD").
+ */
+export function presetToMetaDateSpec(preset: string): string | { since: string; until: string } {
+  if (preset.startsWith("custom:")) {
+    const [, since, until] = preset.split(":")
+    if (since && until) return { since, until }
+  }
+  return preset
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getMetaIntegration } from "@/lib/meta/integration"
 import { getAdAccounts, getCampaigns, MetaApiError } from "@/lib/meta/api"
+import { presetToMetaDateSpec } from "@/lib/date-range"
 
 export async function GET(request: Request) {
   const integration = await getMetaIntegration()
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
       accountId = accounts[0].account_id
     }
 
-    const campaigns = await getCampaigns(accountId, integration.token, datePreset)
+    const campaigns = await getCampaigns(accountId, integration.token, presetToMetaDateSpec(datePreset))
     return NextResponse.json({ campaigns, accountId })
   } catch (error) {
     const status = error instanceof MetaApiError ? error.status : 500

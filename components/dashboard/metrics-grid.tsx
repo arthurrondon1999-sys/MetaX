@@ -9,9 +9,10 @@ import type { CombinedSummary } from "@/hooks/use-hotmart"
 import {
   formatDecimal,
   positiveNegativeColor,
-  roiColor,
-  roasColor,
+  roiMultiplierColor,
   cpaColor,
+  COLOR_POSITIVE,
+  COLOR_NEGATIVE,
   COLOR_NA,
   COLOR_NEUTRAL,
 } from "@/lib/meta/metrics"
@@ -64,39 +65,25 @@ interface MetricsGridProps {
   flash?: boolean
 }
 
-const PAYMENT_LABELS: Record<string, string> = {
-  CREDIT_CARD: "Cartão",
-  BILLET: "Boleto",
-  PIX: "Pix",
-  PAYPAL: "PayPal",
-  DIRECT_DEBIT: "Débito",
-  GOOGLE_PAY: "Google Pay",
-  SAMSUNG_PAY: "Samsung Pay",
-  WALLET: "Carteira",
-}
-
-function paymentLabel(method: string): string {
-  return PAYMENT_LABELS[method] ?? method.replace(/_/g, " ")
-}
-
 export function MetricsGrid({ summary, loading = false, flash = false }: MetricsGridProps) {
   const { formatMoney } = useCurrency()
 
   const has = Boolean(summary)
   const spend = summary?.spend ?? 0
+  const iof = summary?.iof ?? 0
   const revenue = summary?.revenue ?? 0
   const profit = summary?.profit ?? 0
-  const roas = summary?.roas ?? 0
   const cpa = summary?.cpa ?? 0
   const sales = summary?.sales ?? 0
   const ticket = summary?.averageTicket ?? 0
   const roi = summary?.roi ?? 0
-  const margin = summary?.margin ?? 0
-  const approvalRates = summary?.approvalRates ?? []
 
   const money = (v: number) => formatMoney(has ? v : 0)
-  const naDecimal = (v: number, suffix = "") => (has && v ? `${formatDecimal(v)}${suffix}` : "N/A")
-  const naPercent = (v: number) => (has && v ? `${formatDecimal(v)}%` : "N/A")
+
+  // Faturamento: vermelho se < gastos, verde se >= gastos
+  const revenueColor = !has ? COLOR_NA : revenue >= spend ? COLOR_POSITIVE : COLOR_NEGATIVE
+  // ROI multiplicador
+  const roiText = has && roi ? `${formatDecimal(roi)}x` : "N/A"
 
   return (
     <div className="space-y-4">
@@ -105,9 +92,9 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
         <MetricCard
           label="Faturamento Líquido"
           value={money(revenue)}
-          tip="Comissão líquida do produtor nas vendas aprovadas da Hotmart"
+          tip="Comissão líquida do produtor nas vendas aprovadas da Hotmart. Vermelho quando menor que os gastos com anúncios."
           delay={0}
-          accent={positiveNegativeColor(revenue, has)}
+          accent={revenueColor}
           loading={loading}
           flash={flash}
         />
@@ -120,20 +107,20 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
           flash={flash}
         />
         <MetricCard
-          label="Lucro"
-          value={money(profit)}
-          tip="Faturamento líquido menos gastos com anúncios"
+          label="IOF (3,5%)"
+          value={money(iof)}
+          tip="Imposto sobre Operações Financeiras: 3,5% sobre os gastos com anúncios (cobrança internacional no cartão)"
           delay={0.1}
-          accent={positiveNegativeColor(profit, has)}
+          accent={COLOR_NEGATIVE}
           loading={loading}
           flash={flash}
         />
         <MetricCard
-          label="ROAS"
-          value={naDecimal(roas, "x")}
-          tip="Retorno sobre o investimento em anúncios (faturamento ÷ gastos)"
+          label="Lucro"
+          value={money(profit)}
+          tip="Faturamento líquido menos gastos com anúncios e IOF"
           delay={0.15}
-          accent={has && roas ? roasColor(roas) : COLOR_NA}
+          accent={positiveNegativeColor(profit, has)}
           loading={loading}
           flash={flash}
         />
@@ -169,73 +156,13 @@ export function MetricsGrid({ summary, loading = false, flash = false }: Metrics
         />
         <MetricCard
           label="ROI"
-          value={naPercent(roi)}
-          tip="Retorno sobre o investimento ((lucro ÷ gastos) × 100)"
+          value={roiText}
+          tip="Retorno sobre investimento (faturamento ÷ gastos). Acima de 1.0x = lucro | Abaixo de 1.0x = prejuízo"
           delay={0.35}
-          accent={has && roi ? roiColor(roi) : COLOR_NA}
+          accent={roiMultiplierColor(roi, has)}
           loading={loading}
           flash={flash}
         />
-      </div>
-
-      {/* Row 3 */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <MetricCard
-          label="Margem"
-          value={naPercent(margin)}
-          tip="Margem de lucro (lucro ÷ faturamento)"
-          delay={0.4}
-          className="lg:col-span-1"
-          accent={has && margin ? roiColor(margin) : COLOR_NA}
-          loading={loading}
-          flash={flash}
-        />
-
-        {/* Taxa de Aprovação por método de pagamento (vendas reais da Hotmart) */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.45 }}
-          className="group relative rounded-xl bg-white/[0.03] border border-white/10 p-5 overflow-hidden hover:border-electric-blue/30 transition-all duration-300 lg:col-span-3"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-xs font-medium text-[#E5E7EB]">Taxa de Aprovação</span>
-            <InfoIcon tip="Taxa de aprovação por método de pagamento (vendas Hotmart)" />
-          </div>
-          <div className="mt-4 space-y-2.5">
-            {loading ? (
-              <>
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-full" />
-              </>
-            ) : approvalRates.length === 0 ? (
-              <p className="text-sm text-[#94A3B8]">Conecte a Hotmart para ver as taxas de aprovação.</p>
-            ) : (
-              approvalRates.map((row) => (
-                <div key={row.method} className="flex items-center justify-between">
-                  <span className="text-sm text-white/80 w-24 shrink-0">{paymentLabel(row.method)}</span>
-                  <div className="flex items-center gap-3 flex-1 mx-4">
-                    <div className="h-1.5 flex-1 rounded-full bg-white/5 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-electric-blue to-neon-purple rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(row.rate, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span
-                    className={cn(
-                      "text-sm font-medium tabular-nums w-28 text-right shrink-0",
-                      row.rate >= 80 ? "text-[#00FF88]" : row.rate >= 50 ? "text-[#FFB020]" : "text-[#FF4444]",
-                    )}
-                  >
-                    {`${formatDecimal(row.rate)}% (${row.approved}/${row.total})`}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </motion.div>
       </div>
     </div>
   )

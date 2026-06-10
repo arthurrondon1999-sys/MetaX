@@ -3,7 +3,7 @@ import { getMetaIntegration, getHotmartIntegration } from "@/lib/meta/integratio
 import { getAdAccounts, getAccountInsights, findActionValue } from "@/lib/meta/api"
 import { getHotmartToken, fetchHotmartSales } from "@/lib/hotmart/api"
 import { summarizeHotmart } from "@/lib/hotmart/metrics"
-import { presetToRange } from "@/lib/date-range"
+import { presetToRange, presetToMetaDateSpec } from "@/lib/date-range"
 
 /**
  * Resumo combinado: gastos com anúncios (Meta) + faturamento e vendas reais (Hotmart).
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         accountId = accounts[0]?.account_id ?? null
       }
       if (accountId) {
-        const insights = await getAccountInsights(accountId, metaIntegration.token, datePreset)
+        const insights = await getAccountInsights(accountId, metaIntegration.token, presetToMetaDateSpec(datePreset))
         if (insights) {
           spend = Number.parseFloat(insights.spend || "0")
           metaPurchases = findActionValue(insights.actions, "purchase")
@@ -75,15 +75,19 @@ export async function GET(request: Request) {
   // fallback para os dados de compras rastreadas pelo Meta.
   const revenue = hotmart ? hotmart.revenue : metaRevenue
   const sales = hotmart ? hotmart.sales : metaPurchases
-  const profit = revenue - spend
+  // IOF de 3,5% incide sobre os gastos com anúncios (cobrança em cartão internacional)
+  const iof = spend * 0.035
+  const profit = revenue - spend - iof
 
   const summary = {
     spend,
+    iof,
     revenue,
     profit,
     sales,
     roas: spend > 0 ? revenue / spend : 0,
-    roi: spend > 0 ? ((revenue - spend) / spend) * 100 : 0,
+    // ROI em formato multiplicador: faturamento ÷ gastos (ex.: 2.00x)
+    roi: spend > 0 ? revenue / spend : 0,
     cpa: sales > 0 ? spend / sales : 0,
     averageTicket: hotmart ? hotmart.averageTicket : sales > 0 ? revenue / sales : 0,
     margin: revenue > 0 ? (profit / revenue) * 100 : 0,

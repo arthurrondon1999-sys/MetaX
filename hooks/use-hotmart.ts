@@ -57,6 +57,7 @@ export type ApprovalRate = { method: string; approved: number; total: number; ra
 
 export type CombinedSummary = {
   spend: number
+  iof: number
   revenue: number
   profit: number
   sales: number
@@ -78,16 +79,7 @@ export type SummarySources = {
 export function useCombinedSummary(datePreset = "last_30d") {
   const { data, error, isLoading, mutate } = useSWR<{ summary: CombinedSummary; sources: SummarySources }>(
     `/api/summary?date_preset=${datePreset}`,
-    async (url: string) => {
-      const json = await fetcher(url)
-      // Log da resposta real para depuração no console do navegador
-      console.log("[v0] /api/summary resposta:", {
-        datePreset,
-        summary: json?.summary,
-        sources: json?.sources,
-      })
-      return json
-    },
+    fetcher,
     { revalidateOnFocus: false },
   )
   return {

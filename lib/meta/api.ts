@@ -170,9 +170,9 @@ function mapToActions(map: Map<string, number>): { action_type: string; value: s
 export async function getAccountInsights(
   accountId: string,
   token: string,
-  datePreset = "last_30d",
+  date: DateSpec = "last_30d",
 ): Promise<MetaInsight | null> {
-  const campaigns = await getCampaigns(accountId, token, datePreset)
+  const campaigns = await getCampaigns(accountId, token, date)
   if (campaigns.length === 0) return null
 
   let spend = 0
