@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAuthedUser } from "@/lib/meta/integration"
-import { getAdAccounts, MetaApiError } from "@/lib/meta/api"
+import { getAdAccounts, exchangeForLongLivedToken, MetaApiError } from "@/lib/meta/api"
 
 // Salvar ou atualizar token / conta selecionada
 export async function POST(request: Request) {
@@ -17,10 +17,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Informe um token ou conta" }, { status: 400 })
   }
 
-  // Se um token foi enviado, valida antes de salvar
+  // Token de longa duração resultante da troca (60 dias) e sua expiração
+  let longLivedToken: string | undefined
+  let expiresAt: string | null = null
+
+  // Se um token foi enviado, troca por um de longa duração e valida antes de salvar
   if (accessToken) {
     try {
-      await getAdAccounts(accessToken)
+      // 1) Troca o token de curta duração por um de longa duração (~60 dias)
+      const exchanged = await exchangeForLongLivedToken(accessToken)
+      longLivedToken = exchanged.token
+      expiresAt = exchanged.expiresAt
+    } catch (error) {
+      // Se a troca falhar (ex.: token já inválido), usa o token original
+      // e deixa a validação abaixo retornar o erro adequado.
+      longLivedToken = accessToken
+    }
+
+    try {
+      // 2) Valida o token (de longa duração) consultando as contas
+      await getAdAccounts(longLivedToken)
     } catch (error) {
       const message = error instanceof MetaApiError ? error.message : "Token inválido"
       return NextResponse.json({ error: message }, { status: 400 })
@@ -32,11 +48,14 @@ export async function POST(request: Request) {
     platform: "meta",
     updated_at: new Date().toISOString(),
   }
-  if (accessToken) payload.access_token = accessToken
+  if (longLivedToken) {
+    payload.access_token = longLivedToken
+    payload.expires_at = expiresAt
+  }
   if (accountId !== undefined) payload.account_id = accountId
 
   // Upsert mantendo o token existente se só a conta mudou
-  if (accessToken) {
+  if (longLivedToken) {
     const { error } = await supabase.from("integrations").upsert(payload, { onConflict: "user_id,platform" })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {

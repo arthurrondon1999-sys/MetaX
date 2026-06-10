@@ -20,20 +20,25 @@ export async function getAuthedUser() {
 }
 
 export async function getMetaIntegration(): Promise<
-  { token: string; accountId: string | null; updatedAt: string } | null
+  { token: string; accountId: string | null; updatedAt: string; expiresAt: string | null } | null
 > {
   const { supabase, user } = await getAuthedUser()
   if (!user) return null
 
   const { data } = await supabase
     .from("integrations")
-    .select("access_token, account_id, updated_at")
+    .select("access_token, account_id, updated_at, expires_at")
     .eq("user_id", user.id)
     .eq("platform", "meta")
     .maybeSingle()
 
   if (!data) return null
-  return { token: data.access_token, accountId: data.account_id, updatedAt: data.updated_at }
+  return {
+    token: data.access_token,
+    accountId: data.account_id,
+    updatedAt: data.updated_at,
+    expiresAt: data.expires_at ?? null,
+  }
 }
 
 export async function getHotmartIntegration(): Promise<

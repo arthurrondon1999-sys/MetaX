@@ -16,6 +16,9 @@ export type MetaStatus = {
   tokenValid?: boolean
   accountId?: string | null
   updatedAt?: string
+  expiresAt?: string | null
+  daysUntilExpiry?: number | null
+  expired?: boolean
   error?: string
   accounts?: { id: string; account_id: string; name: string; currency?: string }[]
 }

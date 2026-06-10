@@ -63,6 +63,39 @@ async function metaFetch<T>(path: string, token: string, params: Record<string, 
   return json as T
 }
 
+const META_APP_ID = "1019158334133108"
+const META_APP_SECRET = "FG43jWZwHLVcVEcGoKRt3Pvhrko"
+
+export type LongLivedToken = {
+  token: string
+  /** Data de expiração em ISO, ou null se não informada (tokens "permanentes"). */
+  expiresAt: string | null
+}
+
+/**
+ * Troca um token de curta duração (ex.: do Graph API Explorer, ~1h) por um
+ * token de longa duração (~60 dias). Se a Meta não retornar `expires_in`
+ * (caso de System User tokens), `expiresAt` volta como null.
+ */
+export async function exchangeForLongLivedToken(shortLivedToken: string): Promise<LongLivedToken> {
+  const data = await metaFetch<{ access_token: string; expires_in?: number; token_type?: string }>(
+    "oauth/access_token",
+    shortLivedToken,
+    {
+      grant_type: "fb_exchange_token",
+      client_id: META_APP_ID,
+      client_secret: META_APP_SECRET,
+    },
+  )
+
+  const expiresAt =
+    typeof data.expires_in === "number" && data.expires_in > 0
+      ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+      : null
+
+  return { token: data.access_token, expiresAt }
+}
+
 export async function getAdAccounts(token: string): Promise<MetaAccount[]> {
   const data = await metaFetch<{ data: MetaAccount[] }>("me/adaccounts", token, {
     fields: "id,account_id,name,currency,account_status",

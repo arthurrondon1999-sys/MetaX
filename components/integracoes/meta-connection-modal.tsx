@@ -20,6 +20,12 @@ export function MetaConnectionModal({ open, onClose, status, onChanged }: MetaCo
 
   const accounts = status?.accounts ?? []
 
+  const daysLeft = status?.daysUntilExpiry ?? null
+  const expiringSoon = status?.tokenValid && daysLeft != null && daysLeft >= 0 && daysLeft <= 7
+  const expiresLabel = status?.expiresAt
+    ? new Date(status.expiresAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : null
+
   async function handleSave() {
     setSaving(true)
     setError(null)
@@ -65,10 +71,26 @@ export function MetaConnectionModal({ open, onClose, status, onChanged }: MetaCo
     <Modal open={open} onClose={onClose} title="Gerenciar Conexão Meta Ads">
       <div className="space-y-4">
         {/* Status atual */}
-        {status?.tokenValid ? (
-          <div className="flex items-center gap-2 text-sm text-emerald-400">
-            <CheckCircle2 className="w-4 h-4" />
-            Token válido e conectado
+        {status?.expired ? (
+          <div className="flex items-center gap-2 text-sm text-red-400">
+            <AlertTriangle className="w-4 h-4" />
+            Token expirado{expiresLabel ? ` em ${expiresLabel}` : ""}. Cole um novo token para reconectar.
+          </div>
+        ) : status?.tokenValid ? (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm text-emerald-400">
+              <CheckCircle2 className="w-4 h-4" />
+              Token válido e conectado
+            </div>
+            {expiresLabel &&
+              (expiringSoon ? (
+                <p className="text-xs text-amber-400 pl-6">
+                  {daysLeft === 0 ? "Expira hoje" : `Expira em ${daysLeft} ${daysLeft === 1 ? "dia" : "dias"}`} (
+                  {expiresLabel}) — cole um novo token para renovar por mais 60 dias.
+                </p>
+              ) : (
+                <p className="text-xs text-white/50 pl-6">Válido até {expiresLabel}</p>
+              ))}
           </div>
         ) : status?.connected ? (
           <div className="flex items-center gap-2 text-sm text-amber-400">
@@ -78,6 +100,14 @@ export function MetaConnectionModal({ open, onClose, status, onChanged }: MetaCo
         ) : (
           <p className="text-sm text-white/60">Cole um token de acesso do Meta para conectar.</p>
         )}
+
+        {/* Aviso de troca automática */}
+        <div className="rounded-lg bg-electric-blue/10 border border-electric-blue/20 px-3 py-2">
+          <p className="text-[11px] text-white/70 leading-relaxed">
+            O token colado é trocado automaticamente por um de{" "}
+            <span className="text-cyan font-medium">longa duração (~60 dias)</span>, evitando expirações em 1 hora.
+          </p>
+        </div>
 
         {/* Seletor de conta */}
         {accounts.length > 0 && (

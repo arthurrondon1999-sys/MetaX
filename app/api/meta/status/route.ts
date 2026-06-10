@@ -8,13 +8,23 @@ export async function GET() {
     return NextResponse.json({ connected: false })
   }
 
+  const expiresAt = integration.expiresAt
+  const daysUntilExpiry =
+    expiresAt != null
+      ? Math.floor((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : null
+  const expired = daysUntilExpiry != null && daysUntilExpiry < 0
+
   try {
     const accounts = await getAdAccounts(integration.token)
     return NextResponse.json({
       connected: true,
-      tokenValid: true,
+      tokenValid: !expired,
       accountId: integration.accountId,
       updatedAt: integration.updatedAt,
+      expiresAt,
+      daysUntilExpiry,
+      expired,
       accounts,
     })
   } catch (error) {
@@ -24,6 +34,9 @@ export async function GET() {
       tokenValid: false,
       accountId: integration.accountId,
       updatedAt: integration.updatedAt,
+      expiresAt,
+      daysUntilExpiry,
+      expired,
       error: message,
     })
   }
