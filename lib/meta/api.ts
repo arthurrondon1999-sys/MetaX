@@ -13,6 +13,13 @@ export type MetaInsight = {
   actions?: { action_type: string; value: string }[]
   action_values?: { action_type: string; value: string }[]
   cost_per_action_type?: { action_type: string; value: string }[]
+  video_avg_time_watched_actions?: { action_type: string; value: string }[]
+  video_p25_watched_actions?: { action_type: string; value: string }[]
+  video_p50_watched_actions?: { action_type: string; value: string }[]
+  video_p75_watched_actions?: { action_type: string; value: string }[]
+  video_p100_watched_actions?: { action_type: string; value: string }[]
+  video_thruplay_watched_actions?: { action_type: string; value: string }[]
+  video_play_actions?: { action_type: string; value: string }[]
 }
 
 export type MetaCampaign = {
@@ -20,6 +27,8 @@ export type MetaCampaign = {
   name: string
   status: string
   objective?: string
+  daily_budget?: string
+  lifetime_budget?: string
   insights?: MetaInsight
 }
 
