@@ -3,7 +3,7 @@
 import useSWR from "swr"
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
+  const res = await fetch(url, { cache: "no-store" })
   const json = await res.json()
   if (!res.ok) {
     throw new Error(json.error || "Erro ao carregar dados")
