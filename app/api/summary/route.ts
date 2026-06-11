@@ -117,11 +117,20 @@ export async function GET(request: Request) {
     approvalRates: hotmart?.approvalRates ?? [],
   }
 
-  return NextResponse.json({
-    summary,
-    sources: {
-      meta: { connected: metaConnected, error: metaError },
-      hotmart: { connected: hotmartConnected, error: hotmartError, hasData: Boolean(hotmart) },
+  return NextResponse.json(
+    {
+      summary,
+      sources: {
+        meta: { connected: metaConnected, error: metaError },
+        hotmart: { connected: hotmartConnected, error: hotmartError, hasData: Boolean(hotmart) },
+      },
     },
-  })
+    {
+      // Impede que o CDN/navegador sirva uma resposta antiga em cache em
+      // produção (causa de faturamento "congelado" em zero fora do preview).
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      },
+    },
+  )
 }
