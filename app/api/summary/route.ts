@@ -64,6 +64,10 @@ export async function GET(request: Request) {
   let hotmart = null as ReturnType<typeof summarizeHotmart> | null
   let hotmartConnected = false
   let hotmartError: string | undefined
+  // Diagnóstico exposto na resposta para investigar produção vs preview:
+  // mostra quantas vendas a Hotmart devolveu (antes do filtro de status) e
+  // quais status vieram. Visível na aba Network -> summary -> Response.
+  let hotmartDebug: Record<string, unknown> | undefined
 
   console.log("[v0] summary: Hotmart token found:", hotmartIntegration ? "yes" : "no")
 
@@ -83,6 +87,16 @@ export async function GET(request: Request) {
         }
         const sales = await fetchHotmartSales(tokenResult.token, start, end)
         hotmart = summarizeHotmart(sales)
+        const statusCount: Record<string, number> = {}
+        for (const s of sales) statusCount[s.status] = (statusCount[s.status] ?? 0) + 1
+        hotmartDebug = {
+          rangeStart: start,
+          rangeEnd: end,
+          rawSalesReturned: sales.length,
+          statusBreakdown: statusCount,
+          summarizedSales: hotmart.sales,
+          summarizedRevenue: hotmart.revenue,
+        }
       } catch (e) {
         console.log("[v0] summary: erro ao buscar vendas Hotmart ->", e instanceof Error ? e.message : e)
         hotmartError = "Erro ao buscar vendas na Hotmart"
@@ -122,7 +136,7 @@ export async function GET(request: Request) {
       summary,
       sources: {
         meta: { connected: metaConnected, error: metaError },
-        hotmart: { connected: hotmartConnected, error: hotmartError, hasData: Boolean(hotmart) },
+        hotmart: { connected: hotmartConnected, error: hotmartError, hasData: Boolean(hotmart), debug: hotmartDebug },
       },
     },
     {
