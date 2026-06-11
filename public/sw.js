@@ -1,7 +1,7 @@
 // MetaX Service Worker — app shell + assets estáticos com suporte offline.
 // As chamadas de API NÃO são cacheadas (sempre network-only), para evitar que
 // dados financeiros (faturamento/vendas) fiquem congelados em cache.
-const VERSION = "metax-v2"
+const VERSION = "metax-v3"
 const SHELL_CACHE = `${VERSION}-shell`
 const STATIC_CACHE = `${VERSION}-static`
 
@@ -57,15 +57,19 @@ async function handleNavigate(request) {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event
-  if (request.method !== "GET") return
   const url = new URL(request.url)
-  if (url.origin !== self.location.origin) return
 
-  // Chamadas de API: deixa passar direto para a rede (network-only, sem cache).
-  // Nunca servimos dados financeiros a partir do cache do Service Worker.
-  if (url.pathname.startsWith("/api/")) {
+  // BYPASS TOTAL para qualquer rota de API: o Service Worker nunca intercepta,
+  // cacheia ou modifica requisições que contenham "/api/". Elas vão sempre
+  // direto para a rede (network-only), preservando cookies/headers de auth e
+  // garantindo dados financeiros sempre frescos. Este check vem ANTES de
+  // qualquer outra verificação para não haver exceção.
+  if (url.pathname.startsWith("/api/") || url.pathname.includes("/api/")) {
     return
   }
+
+  if (request.method !== "GET") return
+  if (url.origin !== self.location.origin) return
 
   if (request.mode === "navigate") {
     event.respondWith(handleNavigate(request))
